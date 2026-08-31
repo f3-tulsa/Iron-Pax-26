@@ -16,6 +16,7 @@ interface SavedProgress {
   currentExerciseIndex: number
   elapsedMilliseconds: number
   isFinished: boolean
+  exerciseTimes: number[][]
 }
 
 const initialProgress: SavedProgress = {
@@ -23,6 +24,7 @@ const initialProgress: SavedProgress = {
   currentExerciseIndex: 0,
   elapsedMilliseconds: 0,
   isFinished: false,
+  exerciseTimes: [],
 }
 
 function formatTime(timeInMilliseconds: number) {
@@ -46,6 +48,20 @@ function readProgress(storageKey: string): SavedProgress {
   }
 }
 
+function normalizeExerciseTimes(workout: Workout, savedTimes: number[][]) {
+  return Array.from({ length: workout.rounds }, (_, roundIndex) =>
+    Array.from(
+      { length: workout.exercises.length },
+      (_, exerciseIndex) => savedTimes[roundIndex]?.[exerciseIndex] ?? 0,
+    ),
+  )
+}
+
+function formatDuration(timeInMilliseconds: number) {
+  const { minutes, seconds, centiseconds } = formatTime(timeInMilliseconds)
+  return `${minutes}:${seconds}.${centiseconds}`
+}
+
 function WorkoutTracker({ workout }: { workout: Workout }) {
   const storageKey = `iron-pax-progress:${workout.id}`
   const [savedProgress] = useState(() => readProgress(storageKey))
@@ -55,6 +71,9 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
   const [currentRound, setCurrentRound] = useState(savedProgress.currentRound)
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(
     savedProgress.currentExerciseIndex,
+  )
+  const [exerciseTimes, setExerciseTimes] = useState(() =>
+    normalizeExerciseTimes(workout, savedProgress.exerciseTimes),
   )
   const requestRef = useRef<number | undefined>(undefined)
   const startTimeRef = useRef(0)
@@ -95,12 +114,41 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
   const pauseTimer = useCallback(() => {
     if (!isRunning) return
 
-    accumulatedTimeRef.current += Date.now() - startTimeRef.current
+    const intervalTime = Date.now() - startTimeRef.current
+    accumulatedTimeRef.current += intervalTime
     setTime(accumulatedTimeRef.current)
+    setExerciseTimes((times) =>
+      times.map((round, roundIndex) =>
+        round.map((exerciseTime, exerciseIndex) =>
+          roundIndex === currentRound - 1 && exerciseIndex === currentExerciseIndex
+            ? exerciseTime + intervalTime
+            : exerciseTime,
+        ),
+      ),
+    )
     setIsRunning(false)
     if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current)
     void releaseWakeLock()
-  }, [isRunning, releaseWakeLock])
+  }, [currentExerciseIndex, currentRound, isRunning, releaseWakeLock])
+
+  const recordActiveInterval = () => {
+    if (!isRunning) return
+
+    const now = Date.now()
+    const intervalTime = now - startTimeRef.current
+    accumulatedTimeRef.current += intervalTime
+    startTimeRef.current = now
+    setTime(accumulatedTimeRef.current)
+    setExerciseTimes((times) =>
+      times.map((round, roundIndex) =>
+        round.map((exerciseTime, exerciseIndex) =>
+          roundIndex === currentRound - 1 && exerciseIndex === currentExerciseIndex
+            ? exerciseTime + intervalTime
+            : exerciseTime,
+        ),
+      ),
+    )
+  }
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -114,6 +162,18 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
   }, [isRunning, requestWakeLock])
 
   useEffect(() => {
+    const uncommittedTime = isRunning ? time - accumulatedTimeRef.current : 0
+    const persistedExerciseTimes =
+      uncommittedTime > 0
+        ? exerciseTimes.map((round, roundIndex) =>
+            round.map((exerciseTime, exerciseIndex) =>
+              roundIndex === currentRound - 1 && exerciseIndex === currentExerciseIndex
+                ? exerciseTime + uncommittedTime
+                : exerciseTime,
+            ),
+          )
+        : exerciseTimes
+
     localStorage.setItem(
       storageKey,
       JSON.stringify({
@@ -121,9 +181,18 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
         currentExerciseIndex,
         elapsedMilliseconds: time,
         isFinished,
+        exerciseTimes: persistedExerciseTimes,
       } satisfies SavedProgress),
     )
-  }, [currentExerciseIndex, currentRound, isFinished, storageKey, time])
+  }, [
+    currentExerciseIndex,
+    currentRound,
+    exerciseTimes,
+    isFinished,
+    isRunning,
+    storageKey,
+    time,
+  ])
 
   useEffect(
     () => () => {
@@ -143,12 +212,14 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
     setIsFinished(false)
     setCurrentRound(1)
     setCurrentExerciseIndex(0)
+    setExerciseTimes(normalizeExerciseTimes(workout, []))
     localStorage.removeItem(storageKey)
     void releaseWakeLock()
   }
 
   const handleNext = () => {
     if (!isRunning && !isFinished && time === 0) startTimer()
+    recordActiveInterval()
 
     if (currentExerciseIndex < workout.exercises.length - 1) {
       setCurrentExerciseIndex((index) => index + 1)
@@ -156,12 +227,16 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
       setCurrentRound((round) => round + 1)
       setCurrentExerciseIndex(0)
     } else {
-      pauseTimer()
+      setIsRunning(false)
+      if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current)
+      void releaseWakeLock()
       setIsFinished(true)
     }
   }
 
   const handlePrevious = () => {
+    recordActiveInterval()
+
     if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex((index) => index - 1)
     } else if (currentRound > 1) {
@@ -179,11 +254,23 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
   const nextExercise = workout.exercises[currentExerciseIndex + 1]
 
   if (isFinished) {
+    const roundTimes = exerciseTimes.map((round) =>
+      round.reduce((total, exerciseTime) => total + exerciseTime, 0),
+    )
+    const fastestRoundIndex = roundTimes.indexOf(Math.min(...roundTimes))
+    const slowestRoundIndex = roundTimes.indexOf(Math.max(...roundTimes))
+    const longestRoundTime = Math.max(...roundTimes, 1)
+    const recordedSplitTime = roundTimes.reduce((total, roundTime) => total + roundTime, 0)
+    const unallocatedTime = Math.max(0, time - recordedSplitTime)
+
     return (
-      <main className="finish-screen">
-        <Trophy className="finish-trophy" aria-hidden="true" />
-        <h1>WOD CRUSHED</h1>
-        <p>{workout.athlete} &bull; {workout.rounds} Rounds</p>
+      <main className="finish-screen results-screen">
+        <header className="results-header">
+          <Trophy className="finish-trophy" aria-hidden="true" />
+          <h1>WOD CRUSHED</h1>
+          <p>{workout.athlete} &bull; {workout.rounds} Rounds</p>
+        </header>
+
         <section className="final-time">
           <span>Final Time</span>
           <strong>
@@ -191,6 +278,77 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
             <small>.{formattedTime.centiseconds}</small>
           </strong>
         </section>
+
+        <section className="result-highlights" aria-label="Workout highlights">
+          <article>
+            <span>Average Round</span>
+            <strong>{formatDuration(recordedSplitTime / workout.rounds)}</strong>
+          </article>
+          <article>
+            <span>Fastest Round</span>
+            <strong>R{fastestRoundIndex + 1} &bull; {formatDuration(roundTimes[fastestRoundIndex])}</strong>
+          </article>
+          <article>
+            <span>Slowest Round</span>
+            <strong>R{slowestRoundIndex + 1} &bull; {formatDuration(roundTimes[slowestRoundIndex])}</strong>
+          </article>
+        </section>
+
+        <section className="round-chart" aria-labelledby="round-chart-title">
+          <div className="results-section-heading">
+            <div>
+              <span>Round Comparison</span>
+              <h2 id="round-chart-title">Your pace at a glance</h2>
+            </div>
+          </div>
+          <div className="chart-bars">
+            {roundTimes.map((roundTime, roundIndex) => (
+              <div className="chart-row" key={roundIndex}>
+                <span>R{roundIndex + 1}</span>
+                <div className="chart-track">
+                  <i style={{ width: `${(roundTime / longestRoundTime) * 100}%` }} />
+                </div>
+                <strong>{formatDuration(roundTime)}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="round-breakdown" aria-labelledby="round-breakdown-title">
+          <div className="results-section-heading">
+            <div>
+              <span>Detailed Splits</span>
+              <h2 id="round-breakdown-title">Time by exercise</h2>
+            </div>
+          </div>
+          {exerciseTimes.map((round, roundIndex) => (
+            <article className="round-card" key={roundIndex}>
+              <header>
+                <h3>Round {roundIndex + 1}</h3>
+                <strong>{formatDuration(roundTimes[roundIndex])}</strong>
+              </header>
+              <ol>
+                {round.map((exerciseTime, exerciseIndex) => (
+                  <li key={exerciseIndex}>
+                    <span>
+                      <b>{workout.exercises[exerciseIndex].name}</b>
+                      <small>{workout.exercises[exerciseIndex].reps}</small>
+                    </span>
+                    <strong>{formatDuration(exerciseTime)}</strong>
+                  </li>
+                ))}
+              </ol>
+            </article>
+          ))}
+        </section>
+
+        {unallocatedTime > 0 && (
+          <p className="legacy-time">
+            {formatDuration(unallocatedTime)} from earlier saved progress is included only in the
+            final time.
+          </p>
+        )}
+
         <button className="reset-finish" onClick={resetWorkout}>
           <RotateCcw aria-hidden="true" />
           Reset Workout
