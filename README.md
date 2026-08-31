@@ -9,6 +9,8 @@ deployment on Vercel.
 - Vite development and production builds
 - Date-based weekly workout selection that keeps prior workouts in the dataset
 - Timed round and exercise progression with refresh-safe local progress
+- End-of-workout analytics with active-time exercise splits, round comparisons,
+  and pace highlights
 - Screen wake lock support where available
 - React Router with a not-found route
 - ESLint
