@@ -25,11 +25,12 @@ describe('App', () => {
     expect(screen.getByText('5')).toBeInTheDocument()
   })
 
-  it('shows the IronPAX week 1 workout on its scheduled week', () => {
+  it('shows the IronPAX week 2 workout on its scheduled week', () => {
     vi.setSystemTime(new Date('2026-09-08T12:00:00'))
     render(<App />)
 
     expect(screen.getByRole('heading', { name: /RUNNERS ARE PEOPLE TOO/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Thrusters' })).toBeInTheDocument()
     expect(screen.getByText('400 meters')).toBeInTheDocument()
     expect(screen.getByText('Measured lap')).toBeInTheDocument()
     expect(screen.getByText('Completed Laps')).toBeInTheDocument()
