@@ -9,7 +9,7 @@ import {
   RotateCcw,
   Trophy,
 } from 'lucide-react'
-import { getWorkoutForDate, type Workout } from './data/workouts'
+import { getWorkoutForDate, workouts, type Workout } from './data/workouts'
 
 interface SavedProgress {
   currentRound: number
@@ -81,7 +81,49 @@ function formatLapCount(count: number) {
   return `${count} ${count === 1 ? 'Lap' : 'Laps'}`
 }
 
-function WorkoutTracker({ workout }: { workout: Workout }) {
+interface WorkoutOption {
+  id: string
+  label: string
+}
+
+function WorkoutSelector({
+  options,
+  selectedWorkoutId,
+  onSelectWorkout,
+}: {
+  options: WorkoutOption[]
+  selectedWorkoutId: string
+  onSelectWorkout: (workoutId: string) => void
+}) {
+  return (
+    <label className="workout-selector">
+      <span>IronPAX Workout</span>
+      <select
+        aria-label="Select IronPAX workout"
+        value={selectedWorkoutId}
+        onChange={(event) => onSelectWorkout(event.target.value)}
+      >
+        {options.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+function WorkoutTracker({
+  workout,
+  workoutOptions,
+  selectedWorkoutId,
+  onSelectWorkout,
+}: {
+  workout: Workout
+  workoutOptions: WorkoutOption[]
+  selectedWorkoutId: string
+  onSelectWorkout: (workoutId: string) => void
+}) {
   const storageKey = `iron-pax-progress:${workout.id}`
   const isAmrap = workout.format === 'amrap'
   const totalRounds = workout.rounds ?? 0
@@ -314,6 +356,11 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
     return (
       <main className="finish-screen results-screen">
         <header className="results-header">
+          <WorkoutSelector
+            options={workoutOptions}
+            selectedWorkoutId={selectedWorkoutId}
+            onSelectWorkout={onSelectWorkout}
+          />
           <Trophy className="finish-trophy" aria-hidden="true" />
           <h1>WOD CRUSHED</h1>
           <p>
@@ -436,7 +483,14 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
   return (
     <div className="tracker-shell">
       <header className="app-header">
-        <h1><Activity aria-hidden="true" /> {workout.athlete}</h1>
+        <div className="app-title-group">
+          <h1><Activity aria-hidden="true" /> {workout.athlete}</h1>
+          <WorkoutSelector
+            options={workoutOptions}
+            selectedWorkoutId={selectedWorkoutId}
+            onSelectWorkout={onSelectWorkout}
+          />
+        </div>
         <div className="header-actions">
           <button className="header-reset" onClick={resetWorkout} aria-label="Reset workout">
             <RotateCcw aria-hidden="true" />
@@ -554,7 +608,14 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
 }
 
 export default function App() {
-  const workout = getWorkoutForDate(new Date())
+  const workoutOptions = workouts.map((workout, index) => ({
+    id: workout.id,
+    label: `IronPAX Week ${index + 1} • ${workout.athlete}`,
+  }))
+  const [selectedWorkoutId, setSelectedWorkoutId] = useState(
+    () => getWorkoutForDate(new Date())?.id ?? workouts.at(-1)?.id ?? '',
+  )
+  const workout = workouts.find((entry) => entry.id === selectedWorkoutId)
 
   if (!workout) {
     return (
@@ -566,5 +627,13 @@ export default function App() {
     )
   }
 
-  return <WorkoutTracker workout={workout} />
+  return (
+    <WorkoutTracker
+      key={workout.id}
+      workout={workout}
+      workoutOptions={workoutOptions}
+      selectedWorkoutId={selectedWorkoutId}
+      onSelectWorkout={setSelectedWorkoutId}
+    />
+  )
 }

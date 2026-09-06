@@ -35,6 +35,26 @@ describe('App', () => {
     expect(screen.getByText('Completed Laps')).toBeInTheDocument()
   })
 
+  it('lets you switch to a different IronPAX workout from the selector', () => {
+    render(<App />)
+
+    fireEvent.change(screen.getByLabelText('Select IronPAX workout'), {
+      target: { value: 'runners-are-people-too-2026-09-07' },
+    })
+
+    expect(screen.getByRole('heading', { name: /RUNNERS ARE PEOPLE TOO/i })).toBeInTheDocument()
+    expect(screen.getByText('400 meters')).toBeInTheDocument()
+    expect(screen.getByText('Completed Laps')).toBeInTheDocument()
+  })
+
+  it('defaults to the latest workout when no week is currently scheduled', () => {
+    vi.setSystemTime(new Date('2026-09-20T12:00:00'))
+    render(<App />)
+
+    expect(screen.getByRole('heading', { name: /RUNNERS ARE PEOPLE TOO/i })).toBeInTheDocument()
+    expect(screen.getByDisplayValue('IronPAX Week 2 • RUNNERS ARE PEOPLE TOO')).toBeInTheDocument()
+  })
+
   it('records only active time for each exercise', () => {
     render(<App />)
 
