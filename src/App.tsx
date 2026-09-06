@@ -77,6 +77,10 @@ function formatDuration(timeInMilliseconds: number) {
   return `${minutes}:${seconds}.${centiseconds}`
 }
 
+function formatLapCount(count: number) {
+  return `${count} ${count === 1 ? 'Lap' : 'Laps'}`
+}
+
 function WorkoutTracker({ workout }: { workout: Workout }) {
   const storageKey = `iron-pax-progress:${workout.id}`
   const isAmrap = workout.format === 'amrap'
@@ -301,8 +305,8 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
     const roundTimes = completedExerciseTimes.map((round) =>
       round.reduce((total, exerciseTime) => total + exerciseTime, 0),
     )
-    const fastestRoundIndex = roundTimes.indexOf(Math.min(...roundTimes, 0))
-    const slowestRoundIndex = roundTimes.indexOf(Math.max(...roundTimes, 0))
+    const fastestRoundIndex = roundTimes.length > 0 ? roundTimes.indexOf(Math.min(...roundTimes)) : -1
+    const slowestRoundIndex = roundTimes.length > 0 ? roundTimes.indexOf(Math.max(...roundTimes)) : -1
     const longestRoundTime = Math.max(...roundTimes, 1)
     const recordedSplitTime = roundTimes.reduce((total, roundTime) => total + roundTime, 0)
     const unallocatedTime = Math.max(0, time - recordedSplitTime)
@@ -313,7 +317,7 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
           <Trophy className="finish-trophy" aria-hidden="true" />
           <h1>WOD CRUSHED</h1>
           <p>
-            {workout.athlete} &bull; {isAmrap ? `${completedRounds} Laps` : `${totalRounds} Rounds`}
+            {workout.athlete} &bull; {isAmrap ? formatLapCount(completedRounds) : `${totalRounds} Rounds`}
           </p>
         </header>
 
@@ -330,7 +334,7 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
             <span>{isAmrap ? 'Score' : 'Average Round'}</span>
             <strong>
               {isAmrap
-                ? `${completedRounds} Laps`
+                ? formatLapCount(completedRounds)
                 : formatDuration(recordedSplitTime / Math.max(totalRounds, 1))}
             </strong>
           </article>

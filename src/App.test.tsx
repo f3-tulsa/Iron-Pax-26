@@ -153,7 +153,7 @@ describe('App', () => {
     act(() => renderFrame(0))
 
     expect(screen.getByText('Final Time').parentElement).toHaveTextContent('45:00.00')
-    expect(screen.getByText('Score').parentElement).toHaveTextContent('1 Laps')
+    expect(screen.getByText('Score').parentElement).toHaveTextContent('1 Lap')
     expect(screen.queryByText('Lap 2')).not.toBeInTheDocument()
   })
 })
