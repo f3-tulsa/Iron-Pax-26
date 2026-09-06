@@ -52,7 +52,7 @@ describe('App', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { name: /RUNNERS ARE PEOPLE TOO/i })).toBeInTheDocument()
-    expect(screen.getByDisplayValue('IronPAX Week 1 • RUNNERS ARE PEOPLE TOO')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('IronPAX Week 2 • RUNNERS ARE PEOPLE TOO')).toBeInTheDocument()
   })
 
   it('records only active time for each exercise', () => {
