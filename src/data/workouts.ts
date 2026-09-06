@@ -8,7 +8,9 @@ export interface Workout {
   id: string
   weekStart: string
   athlete: string
-  rounds: number
+  format?: 'rounds' | 'amrap'
+  rounds?: number
+  timeCapMinutes?: number
   exercises: Exercise[]
 }
 
@@ -24,6 +26,21 @@ export const workouts: Workout[] = [
       { name: 'Thrusters', reps: '26', notes: 'Coupon' },
       { name: 'Lunges', reps: '31', notes: 'R+L = 1 rep' },
       { name: 'Run', reps: '141 yards', notes: '70.5y down & back' },
+    ],
+  },
+  {
+    id: 'runners-are-people-too-2026-09-07',
+    weekStart: '2026-09-07',
+    athlete: 'RUNNERS ARE PEOPLE TOO',
+    format: 'amrap',
+    timeCapMinutes: 45,
+    exercises: [
+      { name: 'Run', reps: '400 meters', notes: 'Measured lap' },
+      { name: 'Thrusters', reps: '10', notes: 'Coupon' },
+      { name: 'Bonnie Blairs', reps: '10', notes: 'Right + left = 1 rep' },
+      { name: 'Jungle Boy Squats', reps: '10', notes: 'Bodyweight' },
+      { name: 'Bonnie Blairs', reps: '10', notes: 'Right + left = 1 rep' },
+      { name: 'Thrusters', reps: '10', notes: 'Coupon' },
     ],
   },
 ]
