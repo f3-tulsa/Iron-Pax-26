@@ -145,6 +145,17 @@ describe('App', () => {
     expect(screen.getAllByText('00:01.00').length).toBeGreaterThanOrEqual(20)
   })
 
+  it('shows analytics when finishing early with the finish button', () => {
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    act(() => vi.advanceTimersByTime(3_000))
+    fireEvent.click(screen.getByRole('button', { name: /Finish Now/i }))
+
+    expect(screen.getByText('Round Comparison')).toBeInTheDocument()
+    expect(screen.getByText('Final Time').parentElement).toHaveTextContent('00:03.00')
+  })
+
   it('restores a completed analytics report from saved progress', () => {
     localStorage.setItem(
       'iron-pax-progress:dj-keller-2026-08-31',

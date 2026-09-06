@@ -335,6 +335,11 @@ function WorkoutTracker({
     }
   }
 
+  const handleFinishNow = () => {
+    recordActiveInterval()
+    finalizeWorkout()
+  }
+
   const formattedTime = formatTime(time)
   const currentExercise = workout.exercises[currentExerciseIndex]
   const nextExercise = workout.exercises[currentExerciseIndex + 1]
@@ -583,6 +588,10 @@ function WorkoutTracker({
           aria-label="Previous exercise"
         >
           <ChevronLeft aria-hidden="true" />
+        </button>
+        <button className="finish-button" onClick={handleFinishNow}>
+          <Trophy aria-hidden="true" />
+          <span>Finish Now</span>
         </button>
         <button className="next-button" onClick={handleNext}>
           <span>

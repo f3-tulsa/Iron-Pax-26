@@ -108,6 +108,7 @@ button {
 .timer-toggle,
 .reset-finish,
 .previous-button,
+.finish-button,
 .next-button {
   border: 0;
   cursor: pointer;
@@ -116,7 +117,8 @@ button {
 
 .header-reset:active,
 .timer-toggle:active,
-.previous-button:active {
+.previous-button:active,
+.finish-button:active {
   transform: scale(0.95);
 }
 
@@ -385,6 +387,35 @@ button {
 .previous-button svg {
   width: 32px;
   height: 32px;
+}
+
+.finish-button {
+  display: flex;
+  flex: 0 0 132px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 96px;
+  border: 1px solid rgba(250, 204, 21, 0.3);
+  border-radius: 24px;
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.1);
+}
+
+.finish-button:hover {
+  background: rgba(250, 204, 21, 0.18);
+}
+
+.finish-button span {
+  font-size: 0.8rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.finish-button svg {
+  width: 20px;
+  height: 20px;
 }
 
 .next-button {
