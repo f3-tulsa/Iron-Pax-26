@@ -7,7 +7,7 @@ deployment on Vercel.
 
 - React 19 and TypeScript
 - Vite development and production builds
-- Date-based weekly workout selection that keeps prior workouts in the dataset
+- A workout selector that defaults to the scheduled week while keeping prior workouts in the dataset
 - Timed round and exercise progression with refresh-safe local progress
 - End-of-workout analytics with active-time exercise splits, round comparisons,
   and pace highlights
@@ -74,6 +74,7 @@ Production deployment when the production branch is updated.
 ## Add the next weekly workout
 
 Append a new record to `src/data/workouts.ts` with a unique ID and its Monday
-`weekStart` date. The app automatically shows only the workout whose seven-day
-window includes the current date. Older records stay in the dataset and keep
-their own progress under a workout-specific local-storage key.
+`weekStart` date. The app defaults to the workout whose seven-day window
+includes the current date, and lets athletes switch to any loaded IronPAX week.
+Older records stay in the dataset and keep their own progress under a
+workout-specific local-storage key.
