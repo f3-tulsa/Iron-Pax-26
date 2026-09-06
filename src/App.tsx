@@ -335,6 +335,19 @@ function WorkoutTracker({
     }
   }
 
+  const handleFinishNow = () => {
+    if (isRunning) {
+      const intervalTime = Date.now() - startTimeRef.current
+      accumulatedTimeRef.current += intervalTime
+      applyIntervalToCurrentExercise(intervalTime)
+      setTime(accumulatedTimeRef.current)
+      setIsRunning(false)
+      if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current)
+    }
+
+    finalizeWorkout(accumulatedTimeRef.current)
+  }
+
   const formattedTime = formatTime(time)
   const currentExercise = workout.exercises[currentExerciseIndex]
   const nextExercise = workout.exercises[currentExerciseIndex + 1]
@@ -472,7 +485,7 @@ function WorkoutTracker({
           </p>
         )}
 
-        <button className="reset-finish" onClick={resetWorkout}>
+        <button type="button" className="reset-finish" onClick={resetWorkout}>
           <RotateCcw aria-hidden="true" />
           Reset Workout
         </button>
@@ -492,10 +505,11 @@ function WorkoutTracker({
           />
         </div>
         <div className="header-actions">
-          <button className="header-reset" onClick={resetWorkout} aria-label="Reset workout">
+          <button type="button" className="header-reset" onClick={resetWorkout} aria-label="Reset workout">
             <RotateCcw aria-hidden="true" />
           </button>
           <button
+            type="button"
             className={`timer-toggle ${isRunning ? 'pause' : ''}`}
             onClick={isRunning ? pauseTimer : startTimer}
           >
@@ -577,6 +591,7 @@ function WorkoutTracker({
 
       <footer className="tracker-controls">
         <button
+          type="button"
           className="previous-button"
           onClick={handlePrevious}
           disabled={currentRound === 1 && currentExerciseIndex === 0}
@@ -584,7 +599,11 @@ function WorkoutTracker({
         >
           <ChevronLeft aria-hidden="true" />
         </button>
-        <button className="next-button" onClick={handleNext}>
+        <button type="button" className="finish-button" onClick={handleFinishNow}>
+          <Trophy aria-hidden="true" />
+          <span>Finish Now</span>
+        </button>
+        <button type="button" className="next-button" onClick={handleNext}>
           <span>
             {!isAmrap &&
             currentExerciseIndex === workout.exercises.length - 1 &&
