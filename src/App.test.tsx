@@ -25,14 +25,22 @@ describe('App', () => {
     expect(screen.getByText('5')).toBeInTheDocument()
   })
 
-  it('shows the IronPAX week 1 workout on its scheduled week', () => {
+  it('shows the IronPAX week 2 workout on its scheduled week', () => {
     vi.setSystemTime(new Date('2026-09-08T12:00:00'))
     render(<App />)
 
     expect(screen.getByRole('heading', { name: /RUNNERS ARE PEOPLE TOO/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Thrusters' })).toBeInTheDocument()
+    expect(screen.getByText('Completed Laps')).toBeInTheDocument()
+
+    for (let exercise = 0; exercise < 5; exercise += 1) {
+      fireEvent.click(screen.getByRole('button', { name: /Next Move/i }))
+    }
+
+    expect(screen.getByRole('heading', { name: 'Run' })).toBeInTheDocument()
     expect(screen.getByText('400 meters')).toBeInTheDocument()
     expect(screen.getByText('Measured lap')).toBeInTheDocument()
-    expect(screen.getByText('Completed Laps')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Complete Lap/i })).toBeInTheDocument()
   })
 
   it('lets you switch to a different IronPAX workout from the selector', () => {
@@ -43,8 +51,14 @@ describe('App', () => {
     })
 
     expect(screen.getByRole('heading', { name: /RUNNERS ARE PEOPLE TOO/i })).toBeInTheDocument()
-    expect(screen.getByText('400 meters')).toBeInTheDocument()
     expect(screen.getByText('Completed Laps')).toBeInTheDocument()
+
+    for (let exercise = 0; exercise < 5; exercise += 1) {
+      fireEvent.click(screen.getByRole('button', { name: /Next Move/i }))
+    }
+
+    expect(screen.getByRole('heading', { name: 'Run' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Complete Lap/i })).toBeInTheDocument()
   })
 
   it('defaults to the latest workout when no week is currently scheduled', () => {
@@ -52,7 +66,7 @@ describe('App', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { name: /RUNNERS ARE PEOPLE TOO/i })).toBeInTheDocument()
-    expect(screen.getByDisplayValue('IronPAX Week 2 • RUNNERS ARE PEOPLE TOO')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('IronPAX Week 1 • RUNNERS ARE PEOPLE TOO')).toBeInTheDocument()
   })
 
   it('records only active time for each exercise', () => {

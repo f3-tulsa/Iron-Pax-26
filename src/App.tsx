@@ -610,7 +610,7 @@ function WorkoutTracker({
 export default function App() {
   const workoutOptions = workouts.map((workout, index) => ({
     id: workout.id,
-    label: `IronPAX Week ${index + 1} • ${workout.athlete}`,
+    label: `IronPAX Week ${index} • ${workout.athlete}`,
   }))
   const [selectedWorkoutId, setSelectedWorkoutId] = useState(
     () => getWorkoutForDate(new Date())?.id ?? workouts.at(-1)?.id ?? '',

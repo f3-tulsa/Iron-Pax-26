@@ -35,12 +35,12 @@ export const workouts: Workout[] = [
     format: 'amrap',
     timeCapMinutes: 45,
     exercises: [
-      { name: 'Run', reps: '400 meters', notes: 'Measured lap' },
       { name: 'Thrusters', reps: '10', notes: 'Coupon' },
       { name: 'Bonnie Blairs', reps: '10', notes: 'Right + left = 1 rep' },
       { name: 'Jungle Boy Squats', reps: '10', notes: 'Bodyweight' },
       { name: 'Bonnie Blairs', reps: '10', notes: 'Right + left = 1 rep' },
       { name: 'Thrusters', reps: '10', notes: 'Coupon' },
+      { name: 'Run', reps: '400 meters', notes: 'Measured lap' },
     ],
   },
 ]
