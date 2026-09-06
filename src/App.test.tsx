@@ -25,6 +25,16 @@ describe('App', () => {
     expect(screen.getByText('5')).toBeInTheDocument()
   })
 
+  it('shows the IronPAX week 1 workout on its scheduled week', () => {
+    vi.setSystemTime(new Date('2026-09-08T12:00:00'))
+    render(<App />)
+
+    expect(screen.getByRole('heading', { name: /RUNNERS ARE PEOPLE TOO/i })).toBeInTheDocument()
+    expect(screen.getByText('400 meters')).toBeInTheDocument()
+    expect(screen.getByText('Jungle Boy Squats')).toBeInTheDocument()
+    expect(screen.getByText('Completed Laps')).toBeInTheDocument()
+  })
+
   it('records only active time for each exercise', () => {
     render(<App />)
 
@@ -118,5 +128,24 @@ describe('App', () => {
     expect(screen.getByText('Round Comparison')).toBeInTheDocument()
     expect(screen.getByText('Final Time').parentElement).toHaveTextContent('00:20.00')
     expect(screen.getAllByRole('heading', { name: /Round [1-4]/ })).toHaveLength(4)
+  })
+
+  it('counts completed laps for the amrap workout when time expires mid-lap', () => {
+    vi.setSystemTime(new Date('2026-09-08T12:00:00'))
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+
+    for (let exercise = 0; exercise < 6; exercise += 1) {
+      act(() => vi.advanceTimersByTime(1_000))
+      fireEvent.click(screen.getByRole('button', { name: exercise === 5 ? /Complete Lap/i : /Next Move/i }))
+    }
+
+    act(() => vi.advanceTimersByTime(2_639_000))
+    act(() => vi.advanceTimersByTime(1_000))
+
+    expect(screen.getByText('Final Time').parentElement).toHaveTextContent('45:00.00')
+    expect(screen.getByText('Score').parentElement).toHaveTextContent('1 Laps')
+    expect(screen.queryByText('Lap 2')).not.toBeInTheDocument()
   })
 })

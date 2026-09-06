@@ -49,11 +49,26 @@ function readProgress(storageKey: string): SavedProgress {
 }
 
 function normalizeExerciseTimes(workout: Workout, savedTimes: number[][]) {
-  return Array.from({ length: workout.rounds }, (_, roundIndex) =>
-    Array.from(
-      { length: workout.exercises.length },
-      (_, exerciseIndex) => savedTimes[roundIndex]?.[exerciseIndex] ?? 0,
-    ),
+  if (workout.format === 'amrap') {
+    if (savedTimes.length > 0) {
+      return savedTimes.map((round) =>
+        Array.from(
+          { length: workout.exercises.length },
+          (_, exerciseIndex) => round[exerciseIndex] ?? 0,
+        ),
+      )
+    }
+
+    return [Array(workout.exercises.length).fill(0)]
+  }
+
+  return Array.from(
+    { length: workout.rounds ?? 0 },
+    (_, roundIndex) =>
+      Array.from(
+        { length: workout.exercises.length },
+        (_, exerciseIndex) => savedTimes[roundIndex]?.[exerciseIndex] ?? 0,
+      ),
   )
 }
 
@@ -64,6 +79,11 @@ function formatDuration(timeInMilliseconds: number) {
 
 function WorkoutTracker({ workout }: { workout: Workout }) {
   const storageKey = `iron-pax-progress:${workout.id}`
+  const isAmrap = workout.format === 'amrap'
+  const totalRounds = workout.rounds ?? 0
+  const timeCapMilliseconds = workout.timeCapMinutes
+    ? workout.timeCapMinutes * 60 * 1000
+    : undefined
   const [savedProgress] = useState(() => readProgress(storageKey))
   const [time, setTime] = useState(savedProgress.elapsedMilliseconds)
   const [isRunning, setIsRunning] = useState(false)
@@ -79,6 +99,31 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
   const startTimeRef = useRef(0)
   const accumulatedTimeRef = useRef(savedProgress.elapsedMilliseconds)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
+
+  const finalizeWorkout = useCallback(
+    (finalTime = accumulatedTimeRef.current) => {
+      setTime(finalTime)
+      setIsRunning(false)
+      if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current)
+      void releaseWakeLock()
+      setIsFinished(true)
+    },
+    [releaseWakeLock],
+  )
+
+  const applyIntervalToCurrentExercise = useCallback((intervalTime: number) => {
+    if (intervalTime <= 0) return
+
+    setExerciseTimes((times) =>
+      times.map((round, roundIndex) =>
+        round.map((exerciseTime, exerciseIndex) =>
+          roundIndex === currentRound - 1 && exerciseIndex === currentExerciseIndex
+            ? exerciseTime + intervalTime
+            : exerciseTime,
+        ),
+      ),
+    )
+  }, [currentExerciseIndex, currentRound])
 
   const requestWakeLock = useCallback(async () => {
     if (!('wakeLock' in navigator) || wakeLockRef.current) return
@@ -101,7 +146,17 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
     if (isFinished || isRunning) return
 
     const updateTime = () => {
-      setTime(accumulatedTimeRef.current + Date.now() - startTimeRef.current)
+      const elapsedTime = accumulatedTimeRef.current + Date.now() - startTimeRef.current
+
+      if (timeCapMilliseconds !== undefined && elapsedTime >= timeCapMilliseconds) {
+        const intervalTime = Math.max(0, timeCapMilliseconds - accumulatedTimeRef.current)
+        accumulatedTimeRef.current = timeCapMilliseconds
+        applyIntervalToCurrentExercise(intervalTime)
+        finalizeWorkout(timeCapMilliseconds)
+        return
+      }
+
+      setTime(elapsedTime)
       requestRef.current = requestAnimationFrame(updateTime)
     }
 
@@ -109,7 +164,7 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
     startTimeRef.current = Date.now()
     requestRef.current = requestAnimationFrame(updateTime)
     void requestWakeLock()
-  }, [isFinished, isRunning, requestWakeLock])
+  }, [applyIntervalToCurrentExercise, finalizeWorkout, isFinished, isRunning, requestWakeLock, timeCapMilliseconds])
 
   const pauseTimer = useCallback(() => {
     if (!isRunning) return
@@ -117,19 +172,11 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
     const intervalTime = Date.now() - startTimeRef.current
     accumulatedTimeRef.current += intervalTime
     setTime(accumulatedTimeRef.current)
-    setExerciseTimes((times) =>
-      times.map((round, roundIndex) =>
-        round.map((exerciseTime, exerciseIndex) =>
-          roundIndex === currentRound - 1 && exerciseIndex === currentExerciseIndex
-            ? exerciseTime + intervalTime
-            : exerciseTime,
-        ),
-      ),
-    )
+    applyIntervalToCurrentExercise(intervalTime)
     setIsRunning(false)
     if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current)
     void releaseWakeLock()
-  }, [currentExerciseIndex, currentRound, isRunning, releaseWakeLock])
+  }, [applyIntervalToCurrentExercise, isRunning, releaseWakeLock])
 
   const recordActiveInterval = () => {
     if (!isRunning) return
@@ -139,15 +186,7 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
     accumulatedTimeRef.current += intervalTime
     startTimeRef.current = now
     setTime(accumulatedTimeRef.current)
-    setExerciseTimes((times) =>
-      times.map((round, roundIndex) =>
-        round.map((exerciseTime, exerciseIndex) =>
-          roundIndex === currentRound - 1 && exerciseIndex === currentExerciseIndex
-            ? exerciseTime + intervalTime
-            : exerciseTime,
-        ),
-      ),
-    )
+    applyIntervalToCurrentExercise(intervalTime)
   }
 
   useEffect(() => {
@@ -223,14 +262,15 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
 
     if (currentExerciseIndex < workout.exercises.length - 1) {
       setCurrentExerciseIndex((index) => index + 1)
-    } else if (currentRound < workout.rounds) {
+    } else if (isAmrap) {
+      setCurrentRound((round) => round + 1)
+      setCurrentExerciseIndex(0)
+      setExerciseTimes((times) => [...times, Array(workout.exercises.length).fill(0)])
+    } else if (currentRound < totalRounds) {
       setCurrentRound((round) => round + 1)
       setCurrentExerciseIndex(0)
     } else {
-      setIsRunning(false)
-      if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current)
-      void releaseWakeLock()
-      setIsFinished(true)
+      finalizeWorkout()
     }
   }
 
@@ -254,11 +294,15 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
   const nextExercise = workout.exercises[currentExerciseIndex + 1]
 
   if (isFinished) {
-    const roundTimes = exerciseTimes.map((round) =>
+    const completedRounds = isAmrap ? Math.max(currentRound - 1, 0) : totalRounds
+    const completedExerciseTimes = isAmrap
+      ? exerciseTimes.slice(0, completedRounds)
+      : exerciseTimes
+    const roundTimes = completedExerciseTimes.map((round) =>
       round.reduce((total, exerciseTime) => total + exerciseTime, 0),
     )
-    const fastestRoundIndex = roundTimes.indexOf(Math.min(...roundTimes))
-    const slowestRoundIndex = roundTimes.indexOf(Math.max(...roundTimes))
+    const fastestRoundIndex = roundTimes.indexOf(Math.min(...roundTimes, 0))
+    const slowestRoundIndex = roundTimes.indexOf(Math.max(...roundTimes, 0))
     const longestRoundTime = Math.max(...roundTimes, 1)
     const recordedSplitTime = roundTimes.reduce((total, roundTime) => total + roundTime, 0)
     const unallocatedTime = Math.max(0, time - recordedSplitTime)
@@ -268,7 +312,9 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
         <header className="results-header">
           <Trophy className="finish-trophy" aria-hidden="true" />
           <h1>WOD CRUSHED</h1>
-          <p>{workout.athlete} &bull; {workout.rounds} Rounds</p>
+          <p>
+            {workout.athlete} &bull; {isAmrap ? `${completedRounds} Laps` : `${totalRounds} Rounds`}
+          </p>
         </header>
 
         <section className="final-time">
@@ -281,66 +327,92 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
 
         <section className="result-highlights" aria-label="Workout highlights">
           <article>
-            <span>Average Round</span>
-            <strong>{formatDuration(recordedSplitTime / workout.rounds)}</strong>
+            <span>{isAmrap ? 'Score' : 'Average Round'}</span>
+            <strong>
+              {isAmrap
+                ? `${completedRounds} Laps`
+                : formatDuration(recordedSplitTime / Math.max(totalRounds, 1))}
+            </strong>
           </article>
-          <article>
-            <span>Fastest Round</span>
-            <strong>R{fastestRoundIndex + 1} &bull; {formatDuration(roundTimes[fastestRoundIndex])}</strong>
-          </article>
-          <article>
-            <span>Slowest Round</span>
-            <strong>R{slowestRoundIndex + 1} &bull; {formatDuration(roundTimes[slowestRoundIndex])}</strong>
-          </article>
+          {roundTimes.length > 0 && (
+            <>
+              <article>
+                <span>{isAmrap ? 'Average Lap' : 'Fastest Round'}</span>
+                <strong>
+                  {isAmrap
+                    ? formatDuration(recordedSplitTime / completedRounds)
+                    : `R${fastestRoundIndex + 1} • ${formatDuration(roundTimes[fastestRoundIndex])}`}
+                </strong>
+              </article>
+              <article>
+                <span>{isAmrap ? 'Fastest Lap' : 'Slowest Round'}</span>
+                <strong>
+                  {isAmrap
+                    ? `L${fastestRoundIndex + 1} • ${formatDuration(roundTimes[fastestRoundIndex])}`
+                    : `R${slowestRoundIndex + 1} • ${formatDuration(roundTimes[slowestRoundIndex])}`}
+                </strong>
+              </article>
+              {isAmrap && (
+                <article>
+                  <span>Slowest Lap</span>
+                  <strong>L{slowestRoundIndex + 1} • {formatDuration(roundTimes[slowestRoundIndex])}</strong>
+                </article>
+              )}
+            </>
+          )}
         </section>
 
-        <section className="round-chart" aria-labelledby="round-chart-title">
-          <div className="results-section-heading">
-            <div>
-              <span>Round Comparison</span>
-              <h2 id="round-chart-title">Your pace at a glance</h2>
-            </div>
-          </div>
-          <div className="chart-bars">
-            {roundTimes.map((roundTime, roundIndex) => (
-              <div className="chart-row" key={roundIndex}>
-                <span>R{roundIndex + 1}</span>
-                <div className="chart-track">
-                  <i style={{ width: `${(roundTime / longestRoundTime) * 100}%` }} />
+        {roundTimes.length > 0 && (
+          <>
+            <section className="round-chart" aria-labelledby="round-chart-title">
+              <div className="results-section-heading">
+                <div>
+                  <span>{isAmrap ? 'Lap Comparison' : 'Round Comparison'}</span>
+                  <h2 id="round-chart-title">Your pace at a glance</h2>
                 </div>
-                <strong>{formatDuration(roundTime)}</strong>
               </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="round-breakdown" aria-labelledby="round-breakdown-title">
-          <div className="results-section-heading">
-            <div>
-              <span>Detailed Splits</span>
-              <h2 id="round-breakdown-title">Time by exercise</h2>
-            </div>
-          </div>
-          {exerciseTimes.map((round, roundIndex) => (
-            <article className="round-card" key={roundIndex}>
-              <header>
-                <h3>Round {roundIndex + 1}</h3>
-                <strong>{formatDuration(roundTimes[roundIndex])}</strong>
-              </header>
-              <ol>
-                {round.map((exerciseTime, exerciseIndex) => (
-                  <li key={exerciseIndex}>
-                    <span>
-                      <b>{workout.exercises[exerciseIndex].name}</b>
-                      <small>{workout.exercises[exerciseIndex].reps}</small>
-                    </span>
-                    <strong>{formatDuration(exerciseTime)}</strong>
-                  </li>
+              <div className="chart-bars">
+                {roundTimes.map((roundTime, roundIndex) => (
+                  <div className="chart-row" key={roundIndex}>
+                    <span>{isAmrap ? `L${roundIndex + 1}` : `R${roundIndex + 1}`}</span>
+                    <div className="chart-track">
+                      <i style={{ width: `${(roundTime / longestRoundTime) * 100}%` }} />
+                    </div>
+                    <strong>{formatDuration(roundTime)}</strong>
+                  </div>
                 ))}
-              </ol>
-            </article>
-          ))}
-        </section>
+              </div>
+            </section>
+
+            <section className="round-breakdown" aria-labelledby="round-breakdown-title">
+              <div className="results-section-heading">
+                <div>
+                  <span>Detailed Splits</span>
+                  <h2 id="round-breakdown-title">Time by exercise</h2>
+                </div>
+              </div>
+              {completedExerciseTimes.map((round, roundIndex) => (
+                <article className="round-card" key={roundIndex}>
+                  <header>
+                    <h3>{isAmrap ? `Lap ${roundIndex + 1}` : `Round ${roundIndex + 1}`}</h3>
+                    <strong>{formatDuration(roundTimes[roundIndex])}</strong>
+                  </header>
+                  <ol>
+                    {round.map((exerciseTime, exerciseIndex) => (
+                      <li key={exerciseIndex}>
+                        <span>
+                          <b>{workout.exercises[exerciseIndex].name}</b>
+                          <small>{workout.exercises[exerciseIndex].reps}</small>
+                        </span>
+                        <strong>{formatDuration(exerciseTime)}</strong>
+                      </li>
+                    ))}
+                  </ol>
+                </article>
+              ))}
+            </section>
+          </>
+        )}
 
         {unallocatedTime > 0 && (
           <p className="legacy-time">
@@ -376,25 +448,38 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
       </header>
 
       <main className="tracker-main">
-        <section className="round-status" aria-label={`Round ${currentRound} of ${workout.rounds}`}>
+        <section
+          className="round-status"
+          aria-label={isAmrap ? `Current lap ${currentRound}` : `Round ${currentRound} of ${totalRounds}`}
+        >
           <div>
-            <span>Current Round</span>
-            <strong>{currentRound} <small>/ {workout.rounds}</small></strong>
+            <span>{isAmrap ? 'Current Lap' : 'Current Round'}</span>
+            <strong>
+              {currentRound}
+              {!isAmrap && <small> / {totalRounds}</small>}
+            </strong>
           </div>
-          <div className="round-bars" aria-hidden="true">
-            {Array.from({ length: workout.rounds }, (_, index) => (
-              <i
-                className={
-                  index + 1 < currentRound
-                    ? 'complete'
-                    : index + 1 === currentRound
-                      ? 'current'
-                      : ''
-                }
-                key={index}
-              />
-            ))}
-          </div>
+          {isAmrap ? (
+            <div>
+              <span>Completed Laps</span>
+              <strong>{Math.max(currentRound - 1, 0)}</strong>
+            </div>
+          ) : (
+            <div className="round-bars" aria-hidden="true">
+              {Array.from({ length: totalRounds }, (_, index) => (
+                <i
+                  className={
+                    index + 1 < currentRound
+                      ? 'complete'
+                      : index + 1 === currentRound
+                        ? 'current'
+                        : ''
+                  }
+                  key={index}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
         <output className={`stopwatch ${isRunning ? '' : 'stopped'}`} aria-live="off">
@@ -416,7 +501,12 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
           <span>Up Next</span>
           {nextExercise ? (
             <strong>{nextExercise.reps} {nextExercise.name}</strong>
-          ) : currentRound < workout.rounds ? (
+          ) : isAmrap ? (
+            <strong className="next-round">
+              Lap {currentRound + 1} {workout.exercises[0].name}
+              <RotateCcw aria-hidden="true" />
+            </strong>
+          ) : currentRound < totalRounds ? (
             <strong className="next-round">
               Round {currentRound + 1} {workout.exercises[0].name}
               <RotateCcw aria-hidden="true" />
@@ -438,13 +528,17 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
         </button>
         <button className="next-button" onClick={handleNext}>
           <span>
-            {currentExerciseIndex === workout.exercises.length - 1 &&
-            currentRound === workout.rounds
+            {!isAmrap &&
+            currentExerciseIndex === workout.exercises.length - 1 &&
+            currentRound === totalRounds
               ? 'Finish WOD'
+              : isAmrap && currentExerciseIndex === workout.exercises.length - 1
+                ? 'Complete Lap'
               : 'Next Move'}
           </span>
-          {currentExerciseIndex === workout.exercises.length - 1 &&
-          currentRound === workout.rounds ? (
+          {!isAmrap &&
+          currentExerciseIndex === workout.exercises.length - 1 &&
+          currentRound === totalRounds ? (
             <CheckCircle2 aria-hidden="true" />
           ) : (
             <ChevronRight aria-hidden="true" />
