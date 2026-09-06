@@ -31,7 +31,7 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { name: /RUNNERS ARE PEOPLE TOO/i })).toBeInTheDocument()
     expect(screen.getByText('400 meters')).toBeInTheDocument()
-    expect(screen.getByText('Jungle Boy Squats')).toBeInTheDocument()
+    expect(screen.getByText('Measured lap')).toBeInTheDocument()
     expect(screen.getByText('Completed Laps')).toBeInTheDocument()
   })
 
@@ -132,6 +132,14 @@ describe('App', () => {
 
   it('counts completed laps for the amrap workout when time expires mid-lap', () => {
     vi.setSystemTime(new Date('2026-09-08T12:00:00'))
+    let renderFrame: FrameRequestCallback = () => undefined
+    vi.stubGlobal(
+      'requestAnimationFrame',
+      vi.fn((callback: FrameRequestCallback) => {
+        renderFrame = callback
+        return 1
+      }),
+    )
     render(<App />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
@@ -141,8 +149,8 @@ describe('App', () => {
       fireEvent.click(screen.getByRole('button', { name: exercise === 5 ? /Complete Lap/i : /Next Move/i }))
     }
 
-    act(() => vi.advanceTimersByTime(2_639_000))
-    act(() => vi.advanceTimersByTime(1_000))
+    act(() => vi.advanceTimersByTime(2_695_000))
+    act(() => renderFrame(0))
 
     expect(screen.getByText('Final Time').parentElement).toHaveTextContent('45:00.00')
     expect(screen.getByText('Score').parentElement).toHaveTextContent('1 Laps')

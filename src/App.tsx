@@ -100,17 +100,6 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
   const accumulatedTimeRef = useRef(savedProgress.elapsedMilliseconds)
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
 
-  const finalizeWorkout = useCallback(
-    (finalTime = accumulatedTimeRef.current) => {
-      setTime(finalTime)
-      setIsRunning(false)
-      if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current)
-      void releaseWakeLock()
-      setIsFinished(true)
-    },
-    [releaseWakeLock],
-  )
-
   const applyIntervalToCurrentExercise = useCallback((intervalTime: number) => {
     if (intervalTime <= 0) return
 
@@ -141,6 +130,17 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
     await wakeLockRef.current.release()
     wakeLockRef.current = null
   }, [])
+
+  const finalizeWorkout = useCallback(
+    (finalTime = accumulatedTimeRef.current) => {
+      setTime(finalTime)
+      setIsRunning(false)
+      if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current)
+      void releaseWakeLock()
+      setIsFinished(true)
+    },
+    [releaseWakeLock],
+  )
 
   const startTimer = useCallback(() => {
     if (isFinished || isRunning) return
