@@ -192,6 +192,7 @@ function WorkoutTracker({
     normalizeExerciseTimes(workout, savedProgress.exerciseTimes),
   )
   const [partialProgress, setPartialProgress] = useState(savedProgress.partialProgress)
+  const [partialProgressInput, setPartialProgressInput] = useState(String(savedProgress.partialProgress))
   const requestRef = useRef<number | undefined>(undefined)
   const startTimeRef = useRef(0)
   const accumulatedTimeRef = useRef(savedProgress.elapsedMilliseconds)
@@ -352,6 +353,7 @@ function WorkoutTracker({
     setCurrentExerciseIndex(0)
     setExerciseTimes(normalizeExerciseTimes(workout, []))
     setPartialProgress(0)
+    setPartialProgressInput('0')
     localStorage.removeItem(storageKey)
     void releaseWakeLock()
   }
@@ -363,15 +365,18 @@ function WorkoutTracker({
     if (currentExerciseIndex < workout.exercises.length - 1) {
       setCurrentExerciseIndex((index) => index + 1)
       setPartialProgress(0)
+      setPartialProgressInput('0')
     } else if (isRepeatingWorkout) {
       setCurrentRound((round) => round + 1)
       setCurrentExerciseIndex(0)
       setExerciseTimes((times) => [...times, Array(workout.exercises.length).fill(0)])
       setPartialProgress(0)
+      setPartialProgressInput('0')
     } else if (currentRound < totalRounds) {
       setCurrentRound((round) => round + 1)
       setCurrentExerciseIndex(0)
       setPartialProgress(0)
+      setPartialProgressInput('0')
     } else {
       finalizeWorkout()
     }
@@ -383,10 +388,12 @@ function WorkoutTracker({
     if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex((index) => index - 1)
       setPartialProgress(0)
+      setPartialProgressInput('0')
     } else if (currentRound > 1) {
       setCurrentRound((round) => round - 1)
       setCurrentExerciseIndex(workout.exercises.length - 1)
       setPartialProgress(0)
+      setPartialProgressInput('0')
     }
 
     if (isFinished) {
@@ -435,6 +442,8 @@ function WorkoutTracker({
     const partialProgressHelpId = `partial-progress-help-${workout.id}`
     const totalScore = isScoreWorkout ? bankedScore + clampedPartialProgress : 0
     const currentRoundScore = bankedScore - getBankedScore(workout, currentRound, 0) + clampedPartialProgress
+    const showCurrentRoundBreakdown =
+      currentExerciseIndex > 0 || clampedPartialProgress > 0 || completedCycles === 0
     const scoreBreakdown = isScoreWorkout
       ? [
           ...Array.from({ length: completedCycles }, (_, index) => ({
@@ -442,11 +451,15 @@ function WorkoutTracker({
             detail: `${getRoundScore(workout, index + 1)} points`,
             score: getRoundScore(workout, index + 1),
           })),
-          {
-            label: `Round ${currentRound}`,
-            detail: `${currentRoundScore} points`,
-            score: currentRoundScore,
-          },
+          ...(showCurrentRoundBreakdown
+            ? [
+                {
+                  label: `Round ${currentRound}`,
+                  detail: `${currentRoundScore} points`,
+                  score: currentRoundScore,
+                },
+              ]
+            : []),
         ]
       : []
 
@@ -555,10 +568,20 @@ function WorkoutTracker({
                   type="number"
                   min="0"
                   max={partialTarget}
-                  value={clampedPartialProgress}
-                  onChange={(event) =>
-                    setPartialProgress(Math.min(Math.max(Number(event.target.value) || 0, 0), partialTarget))
-                  }
+                  value={partialProgressInput}
+                  onBlur={() => setPartialProgressInput(String(clampedPartialProgress))}
+                  onChange={(event) => {
+                    const nextValue = event.target.value
+                    setPartialProgressInput(nextValue)
+                    if (nextValue === '') {
+                      setPartialProgress(0)
+                      return
+                    }
+
+                    const parsedValue = Number(nextValue)
+                    if (Number.isNaN(parsedValue)) return
+                    setPartialProgress(Math.min(Math.max(parsedValue, 0), partialTarget))
+                  }}
                 />
                 <small id={partialProgressHelpId}>of {partialTarget} {partialUnit}</small>
               </label>
