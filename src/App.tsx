@@ -442,8 +442,12 @@ function WorkoutTracker({
     const partialProgressHelpId = `partial-progress-help-${workout.id}`
     const totalScore = isScoreWorkout ? bankedScore + clampedPartialProgress : 0
     const currentRoundScore = bankedScore - getBankedScore(workout, currentRound, 0) + clampedPartialProgress
-    const showCurrentRoundBreakdown =
+    const hasIncompleteRound =
       currentExerciseIndex > 0 || clampedPartialProgress > 0 || completedCycles === 0
+    const scoreContextRound = hasIncompleteRound ? currentRound : completedCycles
+    const scoreContextExercise = hasIncompleteRound
+      ? currentExercise
+      : workout.exercises[workout.exercises.length - 1]
     const scoreBreakdown = isScoreWorkout
       ? [
           ...Array.from({ length: completedCycles }, (_, index) => ({
@@ -451,7 +455,7 @@ function WorkoutTracker({
             detail: `${getRoundScore(workout, index + 1)} points`,
             score: getRoundScore(workout, index + 1),
           })),
-          ...(showCurrentRoundBreakdown
+          ...(hasIncompleteRound
             ? [
                 {
                   label: `Round ${currentRound}`,
@@ -503,8 +507,12 @@ function WorkoutTracker({
                 <strong>{completedCycles}</strong>
               </article>
               <article>
-                <span>Stopped On</span>
-                <strong>R{currentRound} • {currentExercise.name}</strong>
+                <span>{hasIncompleteRound ? 'Stopped On' : 'Completed Through'}</span>
+                <strong>
+                  {hasIncompleteRound
+                    ? `R${scoreContextRound} • ${scoreContextExercise.name}`
+                    : `Round ${scoreContextRound}`}
+                </strong>
               </article>
             </>
           ) : (
@@ -550,7 +558,7 @@ function WorkoutTracker({
           )}
         </section>
 
-        {isScoreWorkout && (
+        {isScoreWorkout && hasIncompleteRound && (
           <>
             <section className="score-editor" aria-labelledby="score-editor-title">
               <div className="results-section-heading">

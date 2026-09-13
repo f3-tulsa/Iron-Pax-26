@@ -238,6 +238,25 @@ describe('App', () => {
     expect(screen.getByDisplayValue('11')).toBeInTheDocument()
   })
 
+  it('does not add an empty next-round score row after completing a full progressive round', () => {
+    vi.setSystemTime(new Date('2026-09-15T12:00:00'))
+    render(<App />)
+
+    for (let exercise = 0; exercise < 8; exercise += 1) {
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: exercise === 7 ? /Complete Round/i : /Next Move/i,
+        }),
+      )
+    }
+
+    fireEvent.click(screen.getByRole('button', { name: /Finish Now/i }))
+
+    expect(screen.getByText('Completed Through').parentElement).toHaveTextContent('Round 1')
+    expect(screen.queryByRole('heading', { name: 'Stopped mid-move?' })).not.toBeInTheDocument()
+    expect(screen.queryByText('Round 2')).not.toBeInTheDocument()
+  })
+
   it('counts completed laps for the amrap workout when time expires mid-lap', () => {
     vi.setSystemTime(new Date('2026-09-08T12:00:00'))
     let renderFrame: FrameRequestCallback = () => undefined
