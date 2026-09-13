@@ -194,6 +194,7 @@ describe('App', () => {
     })
 
     expect(screen.getByText('Score').parentElement).toHaveTextContent('112')
+    fireEvent.blur(screen.getByLabelText('Completed reps on Bonnies'))
     expect(screen.getByDisplayValue('12')).toBeInTheDocument()
   })
 
