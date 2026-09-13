@@ -25,7 +25,7 @@ describe('App', () => {
     expect(screen.getByText('5')).toBeInTheDocument()
   })
 
-  it('shows the IronPAX week 2 workout on its scheduled week', () => {
+  it('shows the IronPAX week 1 workout on its scheduled week', () => {
     vi.setSystemTime(new Date('2026-09-08T12:00:00'))
     render(<App />)
 
@@ -41,6 +41,22 @@ describe('App', () => {
     expect(screen.getByText('400 meters')).toBeInTheDocument()
     expect(screen.getByText('Measured lap')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Complete Lap/i })).toBeInTheDocument()
+  })
+
+  it('shows the IronPAX week 2 workout on its scheduled week', () => {
+    vi.setSystemTime(new Date('2026-09-15T12:00:00'))
+    render(<App />)
+
+    expect(screen.getByRole('heading', { name: /RAISE THE FLAG/i })).toBeInTheDocument()
+    expect(screen.getByText('Banked Score')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Run' })).toBeInTheDocument()
+    expect(screen.getByText('100 yards')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Next Move/i }))
+
+    expect(screen.getByRole('heading', { name: 'Bonnies' })).toBeInTheDocument()
+    expect(screen.getByText('12 reps')).toBeInTheDocument()
+    expect(screen.getByText('100')).toBeInTheDocument()
   })
 
   it('lets you switch to a different IronPAX workout from the selector', () => {
@@ -65,8 +81,8 @@ describe('App', () => {
     vi.setSystemTime(new Date('2026-09-20T12:00:00'))
     render(<App />)
 
-    expect(screen.getByRole('heading', { name: /RUNNERS ARE PEOPLE TOO/i })).toBeInTheDocument()
-    expect(screen.getByDisplayValue('IronPAX Week 1 • RUNNERS ARE PEOPLE TOO')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /RAISE THE FLAG/i })).toBeInTheDocument()
+    expect(screen.getByDisplayValue('IronPAX Week 2 • RAISE THE FLAG')).toBeInTheDocument()
   })
 
   it('records only active time for each exercise', () => {
@@ -156,6 +172,24 @@ describe('App', () => {
     expect(screen.getByText('Final Time').parentElement).toHaveTextContent('00:03.00')
   })
 
+  it('lets you enter a partial score when finishing the progressive workout early', () => {
+    vi.setSystemTime(new Date('2026-09-15T12:00:00'))
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Next Move/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Finish Now/i }))
+
+    expect(screen.getByText('Score').parentElement).toHaveTextContent('100')
+
+    fireEvent.change(screen.getByLabelText('Completed reps on Bonnies'), {
+      target: { value: '11' },
+    })
+
+    expect(screen.getByText('Score').parentElement).toHaveTextContent('111')
+    expect(screen.getByRole('heading', { name: 'Points by round' })).toBeInTheDocument()
+    expect(screen.getByText('111 points')).toBeInTheDocument()
+  })
+
   it('restores a completed analytics report from saved progress', () => {
     localStorage.setItem(
       'iron-pax-progress:dj-keller-2026-08-31',
@@ -173,6 +207,27 @@ describe('App', () => {
     expect(screen.getByText('Round Comparison')).toBeInTheDocument()
     expect(screen.getByText('Final Time').parentElement).toHaveTextContent('00:20.00')
     expect(screen.getAllByRole('heading', { name: /Round [1-4]/ })).toHaveLength(4)
+  })
+
+  it('restores a completed score report with partial progress for the progressive workout', () => {
+    vi.setSystemTime(new Date('2026-09-15T12:00:00'))
+    localStorage.setItem(
+      'iron-pax-progress:raise-the-flag-2026-09-14',
+      JSON.stringify({
+        currentRound: 1,
+        currentExerciseIndex: 1,
+        elapsedMilliseconds: 3_000,
+        isFinished: true,
+        partialProgress: 11,
+        exerciseTimes: [Array(8).fill(0)],
+      }),
+    )
+
+    render(<App />)
+
+    expect(screen.getByText('Score').parentElement).toHaveTextContent('111')
+    expect(screen.getByText('Stopped On').parentElement).toHaveTextContent('R1 • Bonnies')
+    expect(screen.getByDisplayValue('11')).toBeInTheDocument()
   })
 
   it('counts completed laps for the amrap workout when time expires mid-lap', () => {

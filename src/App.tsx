@@ -17,6 +17,7 @@ interface SavedProgress {
   elapsedMilliseconds: number
   isFinished: boolean
   exerciseTimes: number[][]
+  partialProgress: number
 }
 
 const initialProgress: SavedProgress = {
@@ -25,6 +26,7 @@ const initialProgress: SavedProgress = {
   elapsedMilliseconds: 0,
   isFinished: false,
   exerciseTimes: [],
+  partialProgress: 0,
 }
 
 function formatTime(timeInMilliseconds: number) {
@@ -49,7 +51,7 @@ function readProgress(storageKey: string): SavedProgress {
 }
 
 function normalizeExerciseTimes(workout: Workout, savedTimes: number[][]) {
-  if (workout.format === 'amrap') {
+  if (workout.format === 'amrap' || workout.format === 'progressive-amrap') {
     if (savedTimes.length > 0) {
       return savedTimes.map((round) =>
         Array.from(
@@ -79,6 +81,50 @@ function formatDuration(timeInMilliseconds: number) {
 
 function formatLapCount(count: number) {
   return `${count} ${count === 1 ? 'Lap' : 'Laps'}`
+}
+
+function getCycleLabel(workout: Workout) {
+  if (workout.roundLabel) return workout.roundLabel === 'round' ? 'Round' : 'Lap'
+  return workout.format === 'amrap' ? 'Lap' : 'Round'
+}
+
+function getExerciseScoreTarget(workout: Workout, exerciseIndex: number, round: number) {
+  const exercise = workout.exercises[exerciseIndex]
+  if (exercise?.scoreTarget === undefined) return undefined
+  if (!exercise.progressesByRound) return exercise.scoreTarget
+  const step = workout.roundProgressionStep ?? 0
+  return exercise.scoreTarget + Math.max(round - 1, 0) * step
+}
+
+function getExerciseDisplayReps(workout: Workout, exerciseIndex: number, round: number) {
+  const exercise = workout.exercises[exerciseIndex]
+  const target = getExerciseScoreTarget(workout, exerciseIndex, round)
+  if (target === undefined || !exercise?.scoreUnit) return exercise?.reps ?? ''
+  return `${target} ${exercise.scoreUnit}`
+}
+
+function getCompletedCyclesLabel(workout: Workout, count: number) {
+  const cycleLabel = getCycleLabel(workout)
+  return `${count} ${count === 1 ? cycleLabel : `${cycleLabel}s`}`
+}
+
+function getRoundScore(workout: Workout, round: number) {
+  return workout.exercises.reduce(
+    (total, _, exerciseIndex) => total + (getExerciseScoreTarget(workout, exerciseIndex, round) ?? 0),
+    0,
+  )
+}
+
+function getBankedScore(workout: Workout, currentRound: number, currentExerciseIndex: number) {
+  const completedRoundsScore = Array.from({ length: Math.max(currentRound - 1, 0) }, (_, index) =>
+    getRoundScore(workout, index + 1),
+  ).reduce((total, roundScore) => total + roundScore, 0)
+
+  const currentRoundScore = Array.from({ length: currentExerciseIndex }, (_, exerciseIndex) =>
+    getExerciseScoreTarget(workout, exerciseIndex, currentRound) ?? 0,
+  ).reduce((total, exerciseScore) => total + exerciseScore, 0)
+
+  return completedRoundsScore + currentRoundScore
 }
 
 interface WorkoutOption {
@@ -126,6 +172,9 @@ function WorkoutTracker({
 }) {
   const storageKey = `iron-pax-progress:${workout.id}`
   const isAmrap = workout.format === 'amrap'
+  const isRepeatingWorkout = workout.format === 'amrap' || workout.format === 'progressive-amrap'
+  const isScoreWorkout = workout.format === 'progressive-amrap'
+  const cycleLabel = getCycleLabel(workout)
   const totalRounds = workout.rounds ?? 0
   const timeCapMilliseconds = workout.timeCapMinutes
     ? workout.timeCapMinutes * 60 * 1000
@@ -141,6 +190,7 @@ function WorkoutTracker({
   const [exerciseTimes, setExerciseTimes] = useState(() =>
     normalizeExerciseTimes(workout, savedProgress.exerciseTimes),
   )
+  const [partialProgress, setPartialProgress] = useState(savedProgress.partialProgress)
   const requestRef = useRef<number | undefined>(undefined)
   const startTimeRef = useRef(0)
   const accumulatedTimeRef = useRef(savedProgress.elapsedMilliseconds)
@@ -267,6 +317,7 @@ function WorkoutTracker({
         elapsedMilliseconds: time,
         isFinished,
         exerciseTimes: persistedExerciseTimes,
+        partialProgress,
       } satisfies SavedProgress),
     )
   }, [
@@ -275,6 +326,7 @@ function WorkoutTracker({
     exerciseTimes,
     isFinished,
     isRunning,
+    partialProgress,
     storageKey,
     time,
   ])
@@ -298,6 +350,7 @@ function WorkoutTracker({
     setCurrentRound(1)
     setCurrentExerciseIndex(0)
     setExerciseTimes(normalizeExerciseTimes(workout, []))
+    setPartialProgress(0)
     localStorage.removeItem(storageKey)
     void releaseWakeLock()
   }
@@ -308,13 +361,16 @@ function WorkoutTracker({
 
     if (currentExerciseIndex < workout.exercises.length - 1) {
       setCurrentExerciseIndex((index) => index + 1)
-    } else if (isAmrap) {
+      setPartialProgress(0)
+    } else if (isRepeatingWorkout) {
       setCurrentRound((round) => round + 1)
       setCurrentExerciseIndex(0)
       setExerciseTimes((times) => [...times, Array(workout.exercises.length).fill(0)])
+      setPartialProgress(0)
     } else if (currentRound < totalRounds) {
       setCurrentRound((round) => round + 1)
       setCurrentExerciseIndex(0)
+      setPartialProgress(0)
     } else {
       finalizeWorkout()
     }
@@ -325,9 +381,11 @@ function WorkoutTracker({
 
     if (currentExerciseIndex > 0) {
       setCurrentExerciseIndex((index) => index - 1)
+      setPartialProgress(0)
     } else if (currentRound > 1) {
       setCurrentRound((round) => round - 1)
       setCurrentExerciseIndex(workout.exercises.length - 1)
+      setPartialProgress(0)
     }
 
     if (isFinished) {
@@ -351,11 +409,16 @@ function WorkoutTracker({
   const formattedTime = formatTime(time)
   const currentExercise = workout.exercises[currentExerciseIndex]
   const nextExercise = workout.exercises[currentExerciseIndex + 1]
+  const currentExerciseReps = getExerciseDisplayReps(workout, currentExerciseIndex, currentRound)
+  const nextExerciseReps = nextExercise
+    ? getExerciseDisplayReps(workout, currentExerciseIndex + 1, currentRound)
+    : getExerciseDisplayReps(workout, 0, currentRound + 1)
+  const completedCycles = isRepeatingWorkout ? Math.max(currentRound - 1, 0) : totalRounds
+  const bankedScore = isScoreWorkout ? getBankedScore(workout, currentRound, currentExerciseIndex) : 0
 
   if (isFinished) {
-    const completedRounds = isAmrap ? Math.max(currentRound - 1, 0) : totalRounds
-    const completedExerciseTimes = isAmrap
-      ? exerciseTimes.slice(0, completedRounds)
+    const completedExerciseTimes = isRepeatingWorkout
+      ? exerciseTimes.slice(0, completedCycles)
       : exerciseTimes
     const roundTimes = completedExerciseTimes.map((round) =>
       round.reduce((total, exerciseTime) => total + exerciseTime, 0),
@@ -365,6 +428,25 @@ function WorkoutTracker({
     const longestRoundTime = Math.max(...roundTimes, 1)
     const recordedSplitTime = roundTimes.reduce((total, roundTime) => total + roundTime, 0)
     const unallocatedTime = Math.max(0, time - recordedSplitTime)
+    const partialTarget = getExerciseScoreTarget(workout, currentExerciseIndex, currentRound) ?? 0
+    const partialUnit = currentExercise.scoreUnit ?? 'reps'
+    const clampedPartialProgress = Math.min(Math.max(partialProgress, 0), partialTarget)
+    const totalScore = isScoreWorkout ? bankedScore + clampedPartialProgress : 0
+    const currentRoundScore = bankedScore - getBankedScore(workout, currentRound, 0) + clampedPartialProgress
+    const scoreBreakdown = isScoreWorkout
+      ? [
+          ...Array.from({ length: completedCycles }, (_, index) => ({
+            label: `Round ${index + 1}`,
+            detail: `${getRoundScore(workout, index + 1)} points`,
+            score: getRoundScore(workout, index + 1),
+          })),
+          {
+            label: `Round ${currentRound}`,
+            detail: `${currentRoundScore} points`,
+            score: currentRoundScore,
+          },
+        ]
+      : []
 
     return (
       <main className="finish-screen results-screen">
@@ -377,7 +459,12 @@ function WorkoutTracker({
           <Trophy className="finish-trophy" aria-hidden="true" />
           <h1>WOD CRUSHED</h1>
           <p>
-            {workout.athlete} &bull; {isAmrap ? formatLapCount(completedRounds) : `${totalRounds} Rounds`}
+            {workout.athlete} &bull;{' '}
+            {isScoreWorkout
+              ? getCompletedCyclesLabel(workout, completedCycles)
+              : isAmrap
+                ? formatLapCount(completedCycles)
+                : `${totalRounds} Rounds`}
           </p>
         </header>
 
@@ -390,24 +477,46 @@ function WorkoutTracker({
         </section>
 
         <section className="result-highlights" aria-label="Workout highlights">
-          <article>
-            <span>{isAmrap ? 'Score' : 'Average Round'}</span>
-            <strong>
-              {isAmrap
-                ? formatLapCount(completedRounds)
-                : formatDuration(recordedSplitTime / Math.max(totalRounds, 1))}
-            </strong>
-          </article>
-          {roundTimes.length > 0 && (
+          {isScoreWorkout ? (
             <>
               <article>
-                <span>{isAmrap ? 'Average Lap' : 'Fastest Round'}</span>
-                <strong>
-                  {isAmrap
-                    ? formatDuration(recordedSplitTime / completedRounds)
-                    : `R${fastestRoundIndex + 1} • ${formatDuration(roundTimes[fastestRoundIndex])}`}
-                </strong>
+                <span>Score</span>
+                <strong>{totalScore}</strong>
               </article>
+              <article>
+                <span>Completed Rounds</span>
+                <strong>{completedCycles}</strong>
+              </article>
+              <article>
+                <span>Stopped On</span>
+                <strong>R{currentRound} • {currentExercise.name}</strong>
+              </article>
+            </>
+          ) : (
+            <article>
+              <span>{isAmrap ? 'Score' : 'Average Round'}</span>
+              <strong>
+                {isAmrap
+                  ? formatLapCount(completedCycles)
+                  : formatDuration(recordedSplitTime / Math.max(totalRounds, 1))}
+              </strong>
+            </article>
+          )}
+          {roundTimes.length > 0 && (
+            <>
+              {isAmrap ? (
+                <article>
+                  <span>Average Lap</span>
+                  <strong>
+                    {formatDuration(recordedSplitTime / completedCycles)}
+                  </strong>
+                </article>
+              ) : (
+                <article>
+                  <span>Fastest Round</span>
+                  <strong>R{fastestRoundIndex + 1} • {formatDuration(roundTimes[fastestRoundIndex])}</strong>
+                </article>
+              )}
               <article>
                 <span>{isAmrap ? 'Fastest Lap' : 'Slowest Round'}</span>
                 <strong>
@@ -416,7 +525,7 @@ function WorkoutTracker({
                     : `R${slowestRoundIndex + 1} • ${formatDuration(roundTimes[slowestRoundIndex])}`}
                 </strong>
               </article>
-              {isAmrap && (
+              {isAmrap && !isScoreWorkout && (
                 <article>
                   <span>Slowest Lap</span>
                   <strong>L{slowestRoundIndex + 1} • {formatDuration(roundTimes[slowestRoundIndex])}</strong>
@@ -426,12 +535,64 @@ function WorkoutTracker({
           )}
         </section>
 
+        {isScoreWorkout && (
+          <>
+            <section className="score-editor" aria-labelledby="score-editor-title">
+              <div className="results-section-heading">
+                <div>
+                  <span>Final Progress</span>
+                  <h2 id="score-editor-title">Stopped mid-move?</h2>
+                </div>
+              </div>
+              <p>Enter the {partialUnit} you completed on {currentExercise.name} before the clock stopped.</p>
+              <label className="score-editor-input">
+                <span>{currentExercise.name}</span>
+                <input
+                  aria-label={`Completed ${partialUnit} on ${currentExercise.name}`}
+                  type="number"
+                  min="0"
+                  max={partialTarget}
+                  value={clampedPartialProgress}
+                  onChange={(event) =>
+                    setPartialProgress(Math.min(Math.max(Number(event.target.value) || 0, 0), partialTarget))
+                  }
+                />
+                <small>of {partialTarget} {partialUnit}</small>
+              </label>
+            </section>
+
+            <section className="round-breakdown" aria-labelledby="score-breakdown-title">
+              <div className="results-section-heading">
+                <div>
+                  <span>Score Breakdown</span>
+                  <h2 id="score-breakdown-title">Points by round</h2>
+                </div>
+              </div>
+              {scoreBreakdown.map((round) => (
+                <article className="round-card" key={round.label}>
+                  <header>
+                    <h3>{round.label}</h3>
+                    <strong>{round.score}</strong>
+                  </header>
+                  <ol>
+                    <li>
+                      <span>
+                        <b>{round.detail}</b>
+                      </span>
+                    </li>
+                  </ol>
+                </article>
+              ))}
+            </section>
+          </>
+        )}
+
         {roundTimes.length > 0 && (
           <>
             <section className="round-chart" aria-labelledby="round-chart-title">
               <div className="results-section-heading">
                 <div>
-                  <span>{isAmrap ? 'Lap Comparison' : 'Round Comparison'}</span>
+                  <span>{isRepeatingWorkout ? `${cycleLabel} Comparison` : 'Round Comparison'}</span>
                   <h2 id="round-chart-title">Your pace at a glance</h2>
                 </div>
               </div>
@@ -458,7 +619,7 @@ function WorkoutTracker({
               {completedExerciseTimes.map((round, roundIndex) => (
                 <article className="round-card" key={roundIndex}>
                   <header>
-                    <h3>{isAmrap ? `Lap ${roundIndex + 1}` : `Round ${roundIndex + 1}`}</h3>
+                    <h3>{`${cycleLabel} ${roundIndex + 1}`}</h3>
                     <strong>{formatDuration(roundTimes[roundIndex])}</strong>
                   </header>
                   <ol>
@@ -466,7 +627,7 @@ function WorkoutTracker({
                       <li key={exerciseIndex}>
                         <span>
                           <b>{workout.exercises[exerciseIndex].name}</b>
-                          <small>{workout.exercises[exerciseIndex].reps}</small>
+                          <small>{getExerciseDisplayReps(workout, exerciseIndex, roundIndex + 1)}</small>
                         </span>
                         <strong>{formatDuration(exerciseTime)}</strong>
                       </li>
@@ -522,19 +683,26 @@ function WorkoutTracker({
       <main className="tracker-main">
         <section
           className="round-status"
-          aria-label={isAmrap ? `Current lap ${currentRound}` : `Round ${currentRound} of ${totalRounds}`}
+          aria-label={
+            isRepeatingWorkout ? `Current ${cycleLabel.toLowerCase()} ${currentRound}` : `Round ${currentRound} of ${totalRounds}`
+          }
         >
           <div>
-            <span>{isAmrap ? 'Current Lap' : 'Current Round'}</span>
+            <span>{`Current ${cycleLabel}`}</span>
             <strong>
               {currentRound}
-              {!isAmrap && <small> / {totalRounds}</small>}
+              {!isRepeatingWorkout && <small> / {totalRounds}</small>}
             </strong>
           </div>
-          {isAmrap ? (
+          {isScoreWorkout ? (
+            <div>
+              <span>Banked Score</span>
+              <strong>{bankedScore}</strong>
+            </div>
+          ) : isAmrap ? (
             <div>
               <span>Completed Laps</span>
-              <strong>{Math.max(currentRound - 1, 0)}</strong>
+              <strong>{completedCycles}</strong>
             </div>
           ) : (
             <div className="round-bars" aria-hidden="true">
@@ -564,7 +732,7 @@ function WorkoutTracker({
             <i style={{ width: `${(currentExerciseIndex / workout.exercises.length) * 100}%` }} />
           </div>
           <p>Do This Now</p>
-          <strong>{currentExercise.reps}</strong>
+          <strong>{currentExerciseReps}</strong>
           <h2>{currentExercise.name}</h2>
           <span>{currentExercise.notes}</span>
         </section>
@@ -572,10 +740,10 @@ function WorkoutTracker({
         <section className="next-exercise">
           <span>Up Next</span>
           {nextExercise ? (
-            <strong>{nextExercise.reps} {nextExercise.name}</strong>
-          ) : isAmrap ? (
+            <strong>{nextExerciseReps} {nextExercise.name}</strong>
+          ) : isRepeatingWorkout ? (
             <strong className="next-round">
-              Lap {currentRound + 1} {workout.exercises[0].name}
+              {cycleLabel} {currentRound + 1} {workout.exercises[0].name} • {nextExerciseReps}
               <RotateCcw aria-hidden="true" />
             </strong>
           ) : currentRound < totalRounds ? (
@@ -605,15 +773,15 @@ function WorkoutTracker({
         </button>
         <button type="button" className="next-button" onClick={handleNext}>
           <span>
-            {!isAmrap &&
+            {!isRepeatingWorkout &&
             currentExerciseIndex === workout.exercises.length - 1 &&
             currentRound === totalRounds
               ? 'Finish WOD'
-              : isAmrap && currentExerciseIndex === workout.exercises.length - 1
-                ? 'Complete Lap'
+              : isRepeatingWorkout && currentExerciseIndex === workout.exercises.length - 1
+              ? `Complete ${cycleLabel}`
               : 'Next Move'}
           </span>
-          {!isAmrap &&
+          {!isRepeatingWorkout &&
           currentExerciseIndex === workout.exercises.length - 1 &&
           currentRound === totalRounds ? (
             <CheckCircle2 aria-hidden="true" />
