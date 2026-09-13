@@ -432,6 +432,7 @@ function WorkoutTracker({
     const partialTarget = getExerciseScoreTarget(workout, currentExerciseIndex, currentRound) ?? 0
     const partialUnit = currentExercise.scoreUnit ?? 'reps'
     const clampedPartialProgress = Math.min(Math.max(partialProgress, 0), partialTarget)
+    const partialProgressHelpId = `partial-progress-help-${workout.id}`
     const totalScore = isScoreWorkout ? bankedScore + clampedPartialProgress : 0
     const currentRoundScore = bankedScore - getBankedScore(workout, currentRound, 0) + clampedPartialProgress
     const scoreBreakdown = isScoreWorkout
@@ -509,7 +510,7 @@ function WorkoutTracker({
                 <article>
                   <span>{`Average ${cycleLabel}`}</span>
                   <strong>
-                    {formatDuration(recordedSplitTime / completedCycles)}
+                    {formatDuration(recordedSplitTime / Math.max(completedCycles, 1))}
                   </strong>
                 </article>
               ) : (
@@ -550,6 +551,7 @@ function WorkoutTracker({
                 <span>{currentExercise.name}</span>
                 <input
                   aria-label={`Completed ${partialUnit} on ${currentExercise.name}`}
+                  aria-describedby={partialProgressHelpId}
                   type="number"
                   min="0"
                   max={partialTarget}
@@ -558,7 +560,7 @@ function WorkoutTracker({
                     setPartialProgress(Math.min(Math.max(Number(event.target.value) || 0, 0), partialTarget))
                   }
                 />
-                <small>of {partialTarget} {partialUnit}</small>
+                <small id={partialProgressHelpId}>of {partialTarget} {partialUnit}</small>
               </label>
             </section>
 

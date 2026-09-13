@@ -188,6 +188,13 @@ describe('App', () => {
     expect(screen.getByText('Score').parentElement).toHaveTextContent('111')
     expect(screen.getByRole('heading', { name: 'Points by round' })).toBeInTheDocument()
     expect(screen.getByText('111 points')).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Completed reps on Bonnies'), {
+      target: { value: '99' },
+    })
+
+    expect(screen.getByText('Score').parentElement).toHaveTextContent('112')
+    expect(screen.getByDisplayValue('12')).toBeInTheDocument()
   })
 
   it('restores a completed analytics report from saved progress', () => {
