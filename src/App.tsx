@@ -175,6 +175,7 @@ function WorkoutTracker({
   const isRepeatingWorkout = workout.format === 'amrap' || workout.format === 'progressive-amrap'
   const isScoreWorkout = workout.format === 'progressive-amrap'
   const cycleLabel = getCycleLabel(workout)
+  const cyclePrefix = cycleLabel[0]
   const totalRounds = workout.rounds ?? 0
   const timeCapMilliseconds = workout.timeCapMinutes
     ? workout.timeCapMinutes * 60 * 1000
@@ -504,9 +505,9 @@ function WorkoutTracker({
           )}
           {roundTimes.length > 0 && (
             <>
-              {isAmrap ? (
+              {isRepeatingWorkout ? (
                 <article>
-                  <span>Average Lap</span>
+                  <span>{`Average ${cycleLabel}`}</span>
                   <strong>
                     {formatDuration(recordedSplitTime / completedCycles)}
                   </strong>
@@ -518,17 +519,17 @@ function WorkoutTracker({
                 </article>
               )}
               <article>
-                <span>{isAmrap ? 'Fastest Lap' : 'Slowest Round'}</span>
+                <span>{isRepeatingWorkout ? `Fastest ${cycleLabel}` : 'Slowest Round'}</span>
                 <strong>
-                  {isAmrap
-                    ? `L${fastestRoundIndex + 1} • ${formatDuration(roundTimes[fastestRoundIndex])}`
+                  {isRepeatingWorkout
+                    ? `${cyclePrefix}${fastestRoundIndex + 1} • ${formatDuration(roundTimes[fastestRoundIndex])}`
                     : `R${slowestRoundIndex + 1} • ${formatDuration(roundTimes[slowestRoundIndex])}`}
                 </strong>
               </article>
-              {isAmrap && !isScoreWorkout && (
+              {isRepeatingWorkout && (
                 <article>
-                  <span>Slowest Lap</span>
-                  <strong>L{slowestRoundIndex + 1} • {formatDuration(roundTimes[slowestRoundIndex])}</strong>
+                  <span>{`Slowest ${cycleLabel}`}</span>
+                  <strong>{cyclePrefix}{slowestRoundIndex + 1} • {formatDuration(roundTimes[slowestRoundIndex])}</strong>
                 </article>
               )}
             </>
