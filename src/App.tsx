@@ -442,9 +442,10 @@ function WorkoutTracker({
     const partialProgressHelpId = `partial-progress-help-${workout.id}`
     const totalScore = isScoreWorkout ? bankedScore + clampedPartialProgress : 0
     const currentRoundScore = bankedScore - getBankedScore(workout, currentRound, 0) + clampedPartialProgress
-    const hasIncompleteRound =
-      currentExerciseIndex > 0 || clampedPartialProgress > 0 || completedCycles === 0
-    const scoreContextRound = hasIncompleteRound ? currentRound : completedCycles
+    const currentExerciseRecordedTime = exerciseTimes[currentRound - 1]?.[currentExerciseIndex] ?? 0
+    const hasIncompleteRound = currentExerciseIndex > 0 || currentExerciseRecordedTime > 0
+    const hasCompletedRoundsOnly = !hasIncompleteRound && completedCycles > 0
+    const scoreContextRound = hasIncompleteRound ? currentRound : completedCycles || currentRound
     const scoreContextExercise = hasIncompleteRound
       ? currentExercise
       : workout.exercises[workout.exercises.length - 1]
@@ -507,11 +508,13 @@ function WorkoutTracker({
                 <strong>{completedCycles}</strong>
               </article>
               <article>
-                <span>{hasIncompleteRound ? 'Stopped On' : 'Completed Through'}</span>
+                <span>{hasIncompleteRound || !hasCompletedRoundsOnly ? 'Stopped On' : 'Completed Through'}</span>
                 <strong>
                   {hasIncompleteRound
                     ? `R${scoreContextRound} • ${scoreContextExercise.name}`
-                    : `Round ${scoreContextRound}`}
+                    : hasCompletedRoundsOnly
+                      ? `Round ${scoreContextRound}`
+                      : `R${currentRound} • ${currentExercise.name}`}
                 </strong>
               </article>
             </>
