@@ -401,11 +401,18 @@ button {
 }
 
 .brand-credit {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
   margin: 0;
   padding: 0 16px 12px;
   color: #525252;
   font-size: 0.7rem;
   text-align: center;
+}
+
+.brand-credit p {
+  margin: 0;
 }
 
 .finish-screen .brand-credit {
@@ -421,6 +428,16 @@ button {
 
 .brand-credit a:hover {
   color: #a3a3a3;
+}
+
+.brand-logo-link {
+  display: inline-flex;
+}
+
+.brand-logo {
+  display: block;
+  width: clamp(72px, 12vw, 104px);
+  height: auto;
 }
 
 .previous-button {
