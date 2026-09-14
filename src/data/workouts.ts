@@ -2,15 +2,20 @@ export interface Exercise {
   name: string
   reps: string
   notes: string
+  scoreTarget?: number
+  scoreUnit?: 'reps' | 'yards'
+  progressesByRound?: boolean
 }
 
 export interface Workout {
   id: string
   weekStart: string
   athlete: string
-  format?: 'rounds' | 'amrap'
+  format?: 'rounds' | 'amrap' | 'progressive-amrap'
   rounds?: number
   timeCapMinutes?: number
+  roundLabel?: 'lap' | 'round'
+  roundProgressionStep?: number
   exercises: Exercise[]
 }
 
@@ -41,6 +46,65 @@ export const workouts: Workout[] = [
       { name: 'Bonnie Blairs', reps: '10', notes: 'Right + left = 1 rep' },
       { name: 'Thrusters', reps: '10', notes: 'Coupon' },
       { name: 'Run', reps: '400 meters', notes: 'Measured lap' },
+    ],
+  },
+  {
+    id: 'raise-the-flag-2026-09-14',
+    weekStart: '2026-09-14',
+    athlete: 'RAISE THE FLAG',
+    format: 'progressive-amrap',
+    timeCapMinutes: 45,
+    roundLabel: 'round',
+    roundProgressionStep: 12,
+    exercises: [
+      { name: 'Run', reps: '100 yards', notes: 'Start at the goal line', scoreTarget: 100, scoreUnit: 'yards' },
+      {
+        name: 'Bonnies',
+        reps: '12 reps',
+        notes: '2-count • knee to ground each rep',
+        scoreTarget: 12,
+        scoreUnit: 'reps',
+        progressesByRound: true,
+      },
+      { name: 'Bernie', reps: '100 yards', notes: 'Back to the start line', scoreTarget: 100, scoreUnit: 'yards' },
+      {
+        name: 'HR Muricans',
+        reps: '12 reps',
+        notes: 'Chest to ground • air gap below hands',
+        scoreTarget: 12,
+        scoreUnit: 'reps',
+        progressesByRound: true,
+      },
+      {
+        name: 'Jimothy Bear Crawl',
+        reps: '25 yards',
+        notes: 'Somersault into the WW1s • lunge walk optional',
+        scoreTarget: 25,
+        scoreUnit: 'yards',
+      },
+      {
+        name: 'WW1s',
+        reps: '12 reps',
+        notes: 'Hands behind head at top • touch toes at bottom',
+        scoreTarget: 12,
+        scoreUnit: 'reps',
+        progressesByRound: true,
+      },
+      {
+        name: 'Crawl Bear',
+        reps: '25 yards',
+        notes: 'Back to the start line • reverse lunge walk optional',
+        scoreTarget: 25,
+        scoreUnit: 'yards',
+      },
+      {
+        name: 'Burpees',
+        reps: '12 reps',
+        notes: 'Good pushup form • jump with hands above head',
+        scoreTarget: 12,
+        scoreUnit: 'reps',
+        progressesByRound: true,
+      },
     ],
   },
 ]
