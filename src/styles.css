@@ -333,6 +333,29 @@ button {
   background: #0a0a0a;
 }
 
+.brand-credit {
+  margin: 0;
+  padding: 0 16px 12px;
+  color: #525252;
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.finish-screen .brand-credit {
+  margin-top: 24px;
+  padding: 0 16px;
+}
+
+.brand-credit a {
+  color: #737373;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.brand-credit a:hover {
+  color: #a3a3a3;
+}
+
 .previous-button {
   display: grid;
   flex: 0 0 80px;

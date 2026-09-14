@@ -62,6 +62,17 @@ function formatDuration(timeInMilliseconds: number) {
   return `${minutes}:${seconds}.${centiseconds}`
 }
 
+function BrandCredit() {
+  return (
+    <p className="brand-credit">
+      Built by Dorothy &mdash;{' '}
+      <a href="https://bsquaredsolutions.net/" target="_blank" rel="noopener noreferrer">
+        B Squared Solutions
+      </a>
+    </p>
+  )
+}
+
 function WorkoutTracker({ workout }: { workout: Workout }) {
   const storageKey = `iron-pax-progress:${workout.id}`
   const [savedProgress] = useState(() => readProgress(storageKey))
@@ -353,6 +364,8 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
           <RotateCcw aria-hidden="true" />
           Reset Workout
         </button>
+
+        <BrandCredit />
       </main>
     )
   }
@@ -451,6 +464,8 @@ function WorkoutTracker({ workout }: { workout: Workout }) {
           )}
         </button>
       </footer>
+
+      <BrandCredit />
     </div>
   )
 }
@@ -464,6 +479,7 @@ export default function App() {
         <Trophy className="finish-trophy" aria-hidden="true" />
         <h1>RECOVERY WEEK</h1>
         <p>No workout is scheduled for this week. Check back next Monday.</p>
+        <BrandCredit />
       </main>
     )
   }
