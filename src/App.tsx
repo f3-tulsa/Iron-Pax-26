@@ -96,7 +96,7 @@ function BrandCredit() {
       >
         <img
           className="brand-logo"
-          src="https://i.ibb.co/3y2m4sVM/B2-S-Logo-Red-Black.png"
+          src="https://i.ibb.co/fdtmqgGs/B2-S-Logo-Red-White.png"
           alt="B Squared Solutions"
         />
       </a>
