@@ -81,12 +81,26 @@ function formatDuration(timeInMilliseconds: number) {
 
 function BrandCredit() {
   return (
-    <p className="brand-credit">
-      Built by Dorothy &mdash;{' '}
-      <a href="https://bsquaredsolutions.net/" target="_blank" rel="noopener noreferrer">
-        B Squared Solutions
+    <div className="brand-credit">
+      <p>
+        Built by Dorothy &mdash;{' '}
+        <a href="https://bsquaredsolutions.net/" target="_blank" rel="noopener noreferrer">
+          B Squared Solutions
+        </a>
+      </p>
+      <a
+        className="brand-logo-link"
+        href="https://bsquaredsolutions.net/"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <img
+          className="brand-logo"
+          src="https://i.ibb.co/3y2m4sVM/B2-S-Logo-Red-Black.png"
+          alt="B Squared Solutions"
+        />
       </a>
-    </p>
+    </div>
   )
 }
 

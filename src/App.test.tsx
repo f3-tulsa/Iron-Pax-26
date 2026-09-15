@@ -23,6 +23,10 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: /DJ KELLER/i })).toBeInTheDocument()
     expect(screen.getByText('Manmakers')).toBeInTheDocument()
     expect(screen.getByText('5')).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'B Squared Solutions' })).toHaveAttribute(
+      'src',
+      'https://i.ibb.co/3y2m4sVM/B2-S-Logo-Red-Black.png',
+    )
   })
 
   it('shows the IronPAX week 1 workout on its scheduled week', () => {
