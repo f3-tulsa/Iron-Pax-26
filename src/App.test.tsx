@@ -25,7 +25,7 @@ describe('App', () => {
     expect(screen.getByText('5')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'B Squared Solutions' })).toHaveAttribute(
       'src',
-      'https://i.ibb.co/3y2m4sVM/B2-S-Logo-Red-Black.png',
+      'https://i.ibb.co/fdtmqgGs/B2-S-Logo-Red-White.png',
     )
   })
 
