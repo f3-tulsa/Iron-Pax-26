@@ -63,6 +63,21 @@ describe('App', () => {
     expect(screen.getByText('100')).toBeInTheDocument()
   })
 
+  it('shows the IronPAX week 3 workout on its scheduled week', () => {
+    vi.setSystemTime(new Date('2026-09-22T12:00:00'))
+    render(<App />)
+
+    expect(screen.getByRole('heading', { name: /BELLE RINGER/i })).toBeInTheDocument()
+    expect(screen.getByText('Completed Laps')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Manmakers' })).toBeInTheDocument()
+    expect(screen.getByText('5')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Next Move/i }))
+
+    expect(screen.getByRole('heading', { name: /We’re Not Worthy/i })).toBeInTheDocument()
+    expect(screen.getByText('10')).toBeInTheDocument()
+  })
+
   it('lets you switch to a different IronPAX workout from the selector', () => {
     render(<App />)
 
