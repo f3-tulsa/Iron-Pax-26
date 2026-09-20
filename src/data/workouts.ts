@@ -107,6 +107,25 @@ export const workouts: Workout[] = [
       },
     ],
   },
+  {
+    id: 'belle-ringer-2026-09-21',
+    weekStart: '2026-09-21',
+    athlete: 'BELLE RINGER',
+    format: 'amrap',
+    timeCapMinutes: 45,
+    exercises: [
+      { name: 'Manmakers', reps: '5', notes: 'Cone 1 • center star' },
+      { name: "We’re Not Worthy", reps: '10', notes: 'Cone 2 • rifle carry out, farmer carry back' },
+      { name: 'Manmakers', reps: '5', notes: 'Cone 1 • center star' },
+      { name: 'Goblet Squats', reps: '15', notes: 'Cone 3 • rifle carry out, farmer carry back' },
+      { name: 'Manmakers', reps: '5', notes: 'Cone 1 • center star' },
+      { name: 'Overhead Tricep Extensions', reps: '20', notes: 'Cone 4 • rifle carry out, farmer carry back' },
+      { name: 'Manmakers', reps: '5', notes: 'Cone 1 • center star' },
+      { name: 'KB Swings', reps: '25', notes: 'Cone 5 • rifle carry out, farmer carry back' },
+      { name: 'Manmakers', reps: '5', notes: 'Cone 1 • center star' },
+      { name: 'Curls', reps: '30', notes: 'Cone 6 • rifle carry out, farmer carry back' },
+    ],
+  },
 ]
 
 export function getWorkoutForDate(date: Date): Workout | undefined {
