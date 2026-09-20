@@ -44,8 +44,8 @@ button {
   flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  padding: 20px;
+  gap: clamp(10px, 2vw, 16px);
+  padding: clamp(12px, 2.6vh, 20px) clamp(12px, 2.8vw, 20px);
   border-bottom: 1px solid #262626;
   background: rgba(23, 23, 23, 0.88);
   backdrop-filter: blur(14px);
@@ -86,7 +86,7 @@ button {
 }
 
 .header-actions {
-  gap: 12px;
+  gap: clamp(8px, 1.8vw, 12px);
   flex: 0 1 auto;
   flex-wrap: wrap;
   min-width: 0;
@@ -137,9 +137,9 @@ button {
 
 .header-reset {
   display: grid;
-  width: 36px;
-  height: 36px;
-  padding: 8px;
+  width: clamp(32px, 6.5vw, 36px);
+  height: clamp(32px, 6.5vw, 36px);
+  padding: clamp(6px, 1.4vw, 8px);
   place-items: center;
   border-radius: 999px;
   color: #737373;
@@ -156,7 +156,7 @@ button {
 
 .timer-toggle {
   gap: 8px;
-  padding: 9px 16px;
+  padding: clamp(7px, 1.7vh, 9px) clamp(12px, 2.8vw, 16px);
   border-radius: 999px;
   color: #0a0a0a;
   background: #10b981;
@@ -182,7 +182,7 @@ button {
   width: min(100%, 680px);
   min-width: 0;
   margin: 0 auto;
-  padding: 24px 20px 16px;
+  padding: clamp(12px, 2.8vh, 24px) clamp(12px, 2.8vw, 20px) clamp(8px, 2vh, 16px);
 }
 
 .round-status {
@@ -191,7 +191,7 @@ button {
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: clamp(12px, 2.8vh, 24px);
 }
 
 .round-status > div:first-child {
@@ -211,7 +211,7 @@ button {
 }
 
 .round-status strong {
-  font-size: 2.25rem;
+  font-size: clamp(1.75rem, 6vw, 2.25rem);
   font-weight: 900;
 }
 
@@ -247,11 +247,11 @@ button {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  padding: 16px 0;
-  margin-bottom: 32px;
+  padding: clamp(6px, 1.8vh, 16px) 0;
+  margin-bottom: clamp(12px, 3vh, 32px);
   color: #fff;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: clamp(4.25rem, 17vw, 6rem);
+  font-size: clamp(3rem, 11vw, 5.25rem);
   font-weight: 900;
   letter-spacing: -0.08em;
   line-height: 1;
@@ -277,10 +277,10 @@ button {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 220px;
+  min-height: clamp(156px, 30vh, 220px);
   min-width: 0;
-  padding: 24px 20px;
-  margin-bottom: 16px;
+  padding: clamp(14px, 2.8vh, 24px) clamp(14px, 2.8vw, 20px);
+  margin-bottom: clamp(10px, 2vh, 16px);
   overflow: hidden;
   border: 1px solid #262626;
   border-radius: 24px;
@@ -350,9 +350,9 @@ button {
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
   gap: 12px 16px;
-  min-height: 64px;
+  min-height: clamp(52px, 10vh, 64px);
   padding: 12px 16px;
-  margin-bottom: 24px;
+  margin-bottom: clamp(10px, 2.8vh, 24px);
   border: 1px solid #262626;
   border-radius: 16px;
   background: rgba(23, 23, 23, 0.5);
@@ -395,7 +395,11 @@ button {
   gap: 12px;
   width: min(100%, 680px);
   min-width: 0;
-  padding: 20px max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  padding:
+    clamp(10px, 2.5vh, 20px)
+    max(12px, env(safe-area-inset-right))
+    max(10px, env(safe-area-inset-bottom))
+    max(12px, env(safe-area-inset-left));
   margin: auto auto 0;
   background: #0a0a0a;
 }
@@ -449,6 +453,7 @@ button {
   border-radius: 24px;
   color: #737373;
   background: #171717;
+  min-height: clamp(64px, 11vh, 96px);
 }
 
 .previous-button:disabled {
@@ -468,7 +473,7 @@ button {
   justify-content: center;
   gap: 6px;
   min-width: 0;
-  height: 96px;
+  height: clamp(64px, 11vh, 96px);
   border: 1px solid rgba(250, 204, 21, 0.3);
   border-radius: 24px;
   color: #facc15;
@@ -496,7 +501,7 @@ button {
   flex: 1;
   align-items: center;
   justify-content: center;
-  height: 96px;
+  height: clamp(72px, 12vh, 96px);
   gap: 8px;
   min-width: 0;
   padding: 0 18px;
@@ -515,7 +520,7 @@ button {
 }
 
 .next-button span {
-  font-size: clamp(1rem, 4vw, 1.5rem);
+  font-size: clamp(0.95rem, 3.6vw, 1.4rem);
   font-weight: 900;
   letter-spacing: 0.05em;
   line-height: 1.1;
@@ -528,6 +533,60 @@ button {
   width: 32px;
   height: 32px;
   stroke-width: 3;
+}
+
+@media (max-height: 760px) {
+  .app-header {
+    padding: 10px 12px;
+  }
+
+  .app-title-group {
+    gap: 8px;
+  }
+
+  .tracker-main {
+    padding-top: 10px;
+    padding-bottom: 8px;
+  }
+
+  .round-status {
+    margin-bottom: 10px;
+  }
+
+  .stopwatch {
+    padding: 4px 0;
+    margin-bottom: 12px;
+    font-size: clamp(2.5rem, 10vh, 4.1rem);
+  }
+
+  .stopwatch small {
+    font-size: clamp(1.2rem, 4.8vh, 1.8rem);
+  }
+
+  .current-exercise {
+    min-height: 136px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .current-exercise > strong {
+    font-size: clamp(2.4rem, 11vh, 3.5rem);
+  }
+
+  .current-exercise h2 {
+    font-size: clamp(1.2rem, 4.4vh, 1.65rem);
+  }
+
+  .next-exercise {
+    min-height: 48px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+  }
+
+  .tracker-controls {
+    gap: 10px;
+    padding-top: 8px;
+  }
 }
 
 .finish-screen {
