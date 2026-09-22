@@ -69,13 +69,13 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { name: /BELLE RINGER/i })).toBeInTheDocument()
     expect(screen.getByText('Completed Laps')).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Manmakers' })).toBeInTheDocument()
-    expect(screen.getByText('5')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /We’re Not Worthy/i })).toBeInTheDocument()
+    expect(screen.getByText('5 Manmakers + 10')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /Next Move/i }))
 
-    expect(screen.getByRole('heading', { name: /We’re Not Worthy/i })).toBeInTheDocument()
-    expect(screen.getByText('10')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Goblet Squats' })).toBeInTheDocument()
+    expect(screen.getByText('5 Manmakers + 15')).toBeInTheDocument()
   })
 
   it('lets you switch to a different IronPAX workout from the selector', () => {

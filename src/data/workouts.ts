@@ -114,16 +114,31 @@ export const workouts: Workout[] = [
     format: 'amrap',
     timeCapMinutes: 45,
     exercises: [
-      { name: 'Manmakers', reps: '5', notes: 'Cone 1 • center star' },
-      { name: "We’re Not Worthy", reps: '10', notes: 'Cone 2 • rifle carry out, farmer carry back' },
-      { name: 'Manmakers', reps: '5', notes: 'Cone 1 • center star' },
-      { name: 'Goblet Squats', reps: '15', notes: 'Cone 3 • rifle carry out, farmer carry back' },
-      { name: 'Manmakers', reps: '5', notes: 'Cone 1 • center star' },
-      { name: 'Overhead Tricep Extensions', reps: '20', notes: 'Cone 4 • rifle carry out, farmer carry back' },
-      { name: 'Manmakers', reps: '5', notes: 'Cone 1 • center star' },
-      { name: 'KB Swings', reps: '25', notes: 'Cone 5 • rifle carry out, farmer carry back' },
-      { name: 'Manmakers', reps: '5', notes: 'Cone 1 • center star' },
-      { name: 'Curls', reps: '30', notes: 'Cone 6 • rifle carry out, farmer carry back' },
+      {
+        name: "We’re Not Worthy",
+        reps: '5 Manmakers + 10',
+        notes: 'Start/finish at center • rifle carry out, farmer carry back from Cone 2',
+      },
+      {
+        name: 'Goblet Squats',
+        reps: '5 Manmakers + 15',
+        notes: 'Start/finish at center • rifle carry out, farmer carry back from Cone 3',
+      },
+      {
+        name: 'Overhead Tricep Extensions',
+        reps: '5 Manmakers + 20',
+        notes: 'Start/finish at center • rifle carry out, farmer carry back from Cone 4',
+      },
+      {
+        name: 'KB Swings',
+        reps: '5 Manmakers + 25',
+        notes: 'Start/finish at center • rifle carry out, farmer carry back from Cone 5',
+      },
+      {
+        name: 'Curls',
+        reps: '5 Manmakers + 30',
+        notes: 'Start/finish at center • rifle carry out, farmer carry back from Cone 6',
+      },
     ],
   },
 ]
