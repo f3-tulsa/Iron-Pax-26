@@ -94,11 +94,6 @@ function BrandCredit() {
         target="_blank"
         rel="noopener noreferrer"
       >
-        <img
-          className="brand-logo"
-          src="https://i.ibb.co/fdtmqgGs/B2-S-Logo-Red-White.png"
-          alt="B Squared Solutions"
-        />
       </a>
     </div>
   )
