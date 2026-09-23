@@ -209,12 +209,6 @@ function WorkoutTracker({
   const [time, setTime] = useState(savedProgress.elapsedMilliseconds)
   const [isRunning, setIsRunning] = useState(false)
   const [isFinished, setIsFinished] = useState(savedProgress.isFinished)
-  const [hasStartedWorkout, setHasStartedWorkout] = useState(
-    savedProgress.elapsedMilliseconds > 0 ||
-      savedProgress.currentRound > 1 ||
-      savedProgress.currentExerciseIndex > 0 ||
-      savedProgress.isFinished,
-  )
   const [currentRound, setCurrentRound] = useState(savedProgress.currentRound)
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(
     savedProgress.currentExerciseIndex,
@@ -289,7 +283,6 @@ function WorkoutTracker({
       requestRef.current = requestAnimationFrame(updateTime)
     }
 
-    setHasStartedWorkout(true)
     setIsRunning(true)
     startTimeRef.current = Date.now()
     requestRef.current = requestAnimationFrame(updateTime)
@@ -381,7 +374,6 @@ function WorkoutTracker({
     setTime(0)
     setIsRunning(false)
     setIsFinished(false)
-    setHasStartedWorkout(false)
     setCurrentRound(1)
     setCurrentExerciseIndex(0)
     setExerciseTimes(normalizeExerciseTimes(workout, []))
@@ -456,7 +448,8 @@ function WorkoutTracker({
     : getExerciseDisplayReps(workout, 0, currentRound + 1)
   const completedCycles = isRepeatingWorkout ? Math.max(currentRound - 1, 0) : totalRounds
   const bankedScore = isScoreWorkout ? getBankedScore(workout, currentRound, currentExerciseIndex) : 0
-  const showCompactHeader = hasStartedWorkout && !isFinished
+  const showCompactHeader =
+    !isFinished && (isRunning || time > 0 || currentRound > 1 || currentExerciseIndex > 0)
 
   if (isFinished) {
     const completedExerciseTimes = isRepeatingWorkout
@@ -760,7 +753,7 @@ function WorkoutTracker({
           <div className="compact-workout-bar" role="group" aria-label="Workout controls">
             <div className="compact-workout-meta">
               <span>Workout In Progress</span>
-              <strong>{workout.athlete}</strong>
+              <h1>{workout.athlete}</h1>
             </div>
             <div className="compact-workout-actions">
               <button

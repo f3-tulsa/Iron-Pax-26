@@ -222,11 +222,13 @@ button {
   text-transform: uppercase;
 }
 
-.compact-workout-meta strong {
+.compact-workout-meta h1 {
+  margin: 0;
   max-width: 100%;
   color: #f5f5f5;
   font-size: 0.95rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
   overflow-wrap: anywhere;
 }
 
