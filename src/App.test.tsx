@@ -166,6 +166,26 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: 'Resume' })).toBeInTheDocument()
   })
 
+  it('shows compact workout controls when saved progress advanced to a later move', () => {
+    localStorage.setItem(
+      'iron-pax-progress:dj-keller-2026-08-31',
+      JSON.stringify({
+        currentRound: 1,
+        currentExerciseIndex: 2,
+        elapsedMilliseconds: 0,
+        isFinished: false,
+        exerciseTimes: [Array(5).fill(0)],
+        partialProgress: 0,
+      }),
+    )
+
+    render(<App />)
+
+    expect(screen.queryByLabelText('Select IronPAX workout')).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Workout controls' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
+  })
+
   it('persists the current exercise split during an active interval', () => {
     let renderFrame: FrameRequestCallback = () => undefined
     vi.stubGlobal(

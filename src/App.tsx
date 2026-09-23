@@ -50,6 +50,15 @@ function readProgress(storageKey: string): SavedProgress {
   }
 }
 
+function hasWorkoutStarted(progress: SavedProgress) {
+  return (
+    progress.elapsedMilliseconds > 0 ||
+    progress.currentRound > 1 ||
+    progress.currentExerciseIndex > 0 ||
+    progress.isFinished
+  )
+}
+
 function normalizeExerciseTimes(workout: Workout, savedTimes: number[][]) {
   if (workout.format === 'amrap' || workout.format === 'progressive-amrap') {
     if (savedTimes.length > 0) {
@@ -209,6 +218,7 @@ function WorkoutTracker({
   const [time, setTime] = useState(savedProgress.elapsedMilliseconds)
   const [isRunning, setIsRunning] = useState(false)
   const [isFinished, setIsFinished] = useState(savedProgress.isFinished)
+  const [hasStartedWorkout, setHasStartedWorkout] = useState(() => hasWorkoutStarted(savedProgress))
   const [currentRound, setCurrentRound] = useState(savedProgress.currentRound)
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(
     savedProgress.currentExerciseIndex,
@@ -283,6 +293,7 @@ function WorkoutTracker({
       requestRef.current = requestAnimationFrame(updateTime)
     }
 
+    setHasStartedWorkout(true)
     setIsRunning(true)
     startTimeRef.current = Date.now()
     requestRef.current = requestAnimationFrame(updateTime)
@@ -311,6 +322,10 @@ function WorkoutTracker({
     setTime(accumulatedTimeRef.current)
     applyIntervalToCurrentExercise(intervalTime)
   }
+
+  useEffect(() => {
+    setHasStartedWorkout(hasWorkoutStarted(readProgress(storageKey)))
+  }, [storageKey])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -374,6 +389,7 @@ function WorkoutTracker({
     setTime(0)
     setIsRunning(false)
     setIsFinished(false)
+    setHasStartedWorkout(false)
     setCurrentRound(1)
     setCurrentExerciseIndex(0)
     setExerciseTimes(normalizeExerciseTimes(workout, []))
@@ -448,8 +464,7 @@ function WorkoutTracker({
     : getExerciseDisplayReps(workout, 0, currentRound + 1)
   const completedCycles = isRepeatingWorkout ? Math.max(currentRound - 1, 0) : totalRounds
   const bankedScore = isScoreWorkout ? getBankedScore(workout, currentRound, currentExerciseIndex) : 0
-  const showCompactHeader =
-    !isFinished && (isRunning || time > 0 || currentRound > 1 || currentExerciseIndex > 0)
+  const showCompactHeader = hasStartedWorkout && !isFinished
 
   if (isFinished) {
     const completedExerciseTimes = isRepeatingWorkout
