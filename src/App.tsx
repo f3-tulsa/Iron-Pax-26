@@ -12,6 +12,7 @@ import {
 import { getWorkoutForDate, workouts, type Workout } from './data/workouts'
 
 interface SavedProgress {
+  hasStartedWorkout: boolean
   currentRound: number
   currentExerciseIndex: number
   elapsedMilliseconds: number
@@ -21,6 +22,7 @@ interface SavedProgress {
 }
 
 const initialProgress: SavedProgress = {
+  hasStartedWorkout: false,
   currentRound: 1,
   currentExerciseIndex: 0,
   elapsedMilliseconds: 0,
@@ -52,6 +54,7 @@ function readProgress(storageKey: string): SavedProgress {
 
 function hasWorkoutStarted(progress: SavedProgress) {
   return (
+    progress.hasStartedWorkout ||
     progress.elapsedMilliseconds > 0 ||
     progress.currentRound > 1 ||
     progress.currentExerciseIndex > 0 ||
@@ -324,10 +327,6 @@ function WorkoutTracker({
   }
 
   useEffect(() => {
-    setHasStartedWorkout(hasWorkoutStarted(readProgress(storageKey)))
-  }, [storageKey])
-
-  useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && isRunning) {
         void requestWakeLock()
@@ -354,6 +353,7 @@ function WorkoutTracker({
     localStorage.setItem(
       storageKey,
       JSON.stringify({
+        hasStartedWorkout,
         currentRound,
         currentExerciseIndex,
         elapsedMilliseconds: time,
@@ -366,6 +366,7 @@ function WorkoutTracker({
     currentExerciseIndex,
     currentRound,
     exerciseTimes,
+    hasStartedWorkout,
     isFinished,
     isRunning,
     partialProgress,

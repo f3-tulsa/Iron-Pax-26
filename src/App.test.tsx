@@ -150,6 +150,7 @@ describe('App', () => {
     localStorage.setItem(
       'iron-pax-progress:dj-keller-2026-08-31',
       JSON.stringify({
+        hasStartedWorkout: true,
         currentRound: 1,
         currentExerciseIndex: 0,
         elapsedMilliseconds: 1_500,
