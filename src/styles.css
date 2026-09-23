@@ -241,11 +241,11 @@ button {
 }
 
 .compact-timer-toggle {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
   border: 0;
   border-radius: 999px;
   color: #0a0a0a;
@@ -268,6 +268,13 @@ button {
   width: 16px;
   height: 16px;
   fill: currentColor;
+}
+
+.compact-timer-toggle span {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .round-status {

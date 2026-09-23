@@ -778,6 +778,7 @@ function WorkoutTracker({
                 aria-label={isRunning ? 'Pause' : time > 0 ? 'Resume' : 'Start'}
               >
                 {isRunning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+                <span>{isRunning ? 'Pause' : time > 0 ? 'Resume' : 'Start'}</span>
               </button>
             </div>
           </div>
