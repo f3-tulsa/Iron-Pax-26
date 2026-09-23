@@ -775,7 +775,6 @@ function WorkoutTracker({
                 type="button"
                 className={`compact-timer-toggle ${isRunning ? 'pause' : ''}`}
                 onClick={isRunning ? pauseTimer : startTimer}
-                aria-label={isRunning ? 'Pause' : time > 0 ? 'Resume' : 'Start'}
               >
                 {isRunning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
                 <span>{isRunning ? 'Pause' : time > 0 ? 'Resume' : 'Start'}</span>
