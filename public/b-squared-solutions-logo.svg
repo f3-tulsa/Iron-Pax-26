@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 96" role="img" aria-labelledby="logoTitle logoDesc">
+  <title id="logoTitle">B Squared Solutions</title>
+  <desc id="logoDesc">B Squared Solutions logo</desc>
+  <rect width="320" height="96" rx="20" fill="#111827" />
+  <rect x="8" y="8" width="304" height="80" rx="16" fill="#991b1b" />
+  <path d="M48 28h30c12 0 22 9 22 20 0 7-4 14-10 17 8 3 14 10 14 19 0 12-10 22-22 22H48V28zm20 16v16h10c5 0 9-4 9-8s-4-8-9-8H68zm0 30v16h14c5 0 9-4 9-8s-4-8-9-8H68z" fill="#fff" />
+  <path d="M136 28h30c12 0 22 9 22 20 0 7-4 14-10 17 8 3 14 10 14 19 0 12-10 22-22 22h-34V28zm20 16v16h10c5 0 9-4 9-8s-4-8-9-8h-10zm0 30v16h14c5 0 9-4 9-8s-4-8-9-8h-14z" fill="#fff" opacity=".9" />
+  <text x="214" y="44" fill="#fff" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="700" text-anchor="middle">B Squared</text>
+  <text x="214" y="66" fill="#fecaca" font-family="Inter, Arial, sans-serif" font-size="15" font-weight="600" text-anchor="middle">Solutions</text>
+</svg>

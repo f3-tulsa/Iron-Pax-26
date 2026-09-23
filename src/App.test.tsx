@@ -25,7 +25,7 @@ describe('App', () => {
     expect(screen.getByText('5')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'B Squared Solutions' })).toHaveAttribute(
       'src',
-      'https://i.ibb.co/fdtmqgGs/B2-S-Logo-Red-White.png',
+      '/b-squared-solutions-logo.svg',
     )
   })
 
@@ -131,6 +131,19 @@ describe('App', () => {
     expect(screen.queryByLabelText('Select IronPAX workout')).not.toBeInTheDocument()
     expect(screen.getByRole('toolbar', { name: 'Workout controls' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
+  })
+
+  it('restores the full header after resetting from compact workout controls', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reset workout' }))
+
+    expect(confirmSpy).toHaveBeenCalled()
+    expect(screen.getByLabelText('Select IronPAX workout')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
+    expect(screen.queryByRole('toolbar', { name: 'Workout controls' })).not.toBeInTheDocument()
   })
 
   it('persists the current exercise split during an active interval', () => {
