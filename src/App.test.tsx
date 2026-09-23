@@ -121,6 +121,18 @@ describe('App', () => {
     expect(saved.exerciseTimes[0][1]).toBe(0)
   })
 
+  it('collapses the full header into compact workout controls after the workout starts', () => {
+    render(<App />)
+
+    expect(screen.getByLabelText('Select IronPAX workout')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+
+    expect(screen.queryByLabelText('Select IronPAX workout')).not.toBeInTheDocument()
+    expect(screen.getByRole('toolbar', { name: 'Workout controls' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
+  })
+
   it('persists the current exercise split during an active interval', () => {
     let renderFrame: FrameRequestCallback = () => undefined
     vi.stubGlobal(

@@ -204,6 +204,12 @@ function WorkoutTracker({
   const [time, setTime] = useState(savedProgress.elapsedMilliseconds)
   const [isRunning, setIsRunning] = useState(false)
   const [isFinished, setIsFinished] = useState(savedProgress.isFinished)
+  const [hasStartedWorkout, setHasStartedWorkout] = useState(
+    savedProgress.elapsedMilliseconds > 0 ||
+      savedProgress.currentRound > 1 ||
+      savedProgress.currentExerciseIndex > 0 ||
+      savedProgress.isFinished,
+  )
   const [currentRound, setCurrentRound] = useState(savedProgress.currentRound)
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(
     savedProgress.currentExerciseIndex,
@@ -278,6 +284,7 @@ function WorkoutTracker({
       requestRef.current = requestAnimationFrame(updateTime)
     }
 
+    setHasStartedWorkout(true)
     setIsRunning(true)
     startTimeRef.current = Date.now()
     requestRef.current = requestAnimationFrame(updateTime)
@@ -369,6 +376,7 @@ function WorkoutTracker({
     setTime(0)
     setIsRunning(false)
     setIsFinished(false)
+    setHasStartedWorkout(false)
     setCurrentRound(1)
     setCurrentExerciseIndex(0)
     setExerciseTimes(normalizeExerciseTimes(workout, []))
@@ -443,6 +451,7 @@ function WorkoutTracker({
     : getExerciseDisplayReps(workout, 0, currentRound + 1)
   const completedCycles = isRepeatingWorkout ? Math.max(currentRound - 1, 0) : totalRounds
   const bankedScore = isScoreWorkout ? getBankedScore(workout, currentRound, currentExerciseIndex) : 0
+  const showCompactHeader = hasStartedWorkout && !isFinished
 
   if (isFinished) {
     const completedExerciseTimes = isRepeatingWorkout
@@ -715,31 +724,60 @@ function WorkoutTracker({
 
   return (
     <div className="tracker-shell">
-      <header className="app-header">
-        <div className="app-title-group">
-          <h1><Activity aria-hidden="true" /> {workout.athlete}</h1>
-          <WorkoutSelector
-            options={workoutOptions}
-            selectedWorkoutId={selectedWorkoutId}
-            onSelectWorkout={onSelectWorkout}
-          />
-        </div>
-        <div className="header-actions">
-          <button type="button" className="header-reset" onClick={resetWorkout} aria-label="Reset workout">
-            <RotateCcw aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className={`timer-toggle ${isRunning ? 'pause' : ''}`}
-            onClick={isRunning ? pauseTimer : startTimer}
-          >
-            {isRunning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-            {isRunning ? 'Pause' : time > 0 ? 'Resume' : 'Start'}
-          </button>
-        </div>
-      </header>
+      {!showCompactHeader && (
+        <header className="app-header">
+          <div className="app-title-group">
+            <h1><Activity aria-hidden="true" /> {workout.athlete}</h1>
+            <WorkoutSelector
+              options={workoutOptions}
+              selectedWorkoutId={selectedWorkoutId}
+              onSelectWorkout={onSelectWorkout}
+            />
+          </div>
+          <div className="header-actions">
+            <button type="button" className="header-reset" onClick={resetWorkout} aria-label="Reset workout">
+              <RotateCcw aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`timer-toggle ${isRunning ? 'pause' : ''}`}
+              onClick={isRunning ? pauseTimer : startTimer}
+            >
+              {isRunning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+              {isRunning ? 'Pause' : time > 0 ? 'Resume' : 'Start'}
+            </button>
+          </div>
+        </header>
+      )}
 
       <main className="tracker-main">
+        {showCompactHeader && (
+          <div className="compact-workout-bar" role="toolbar" aria-label="Workout controls">
+            <div className="compact-workout-meta">
+              <span>Workout In Progress</span>
+              <strong>{workout.athlete}</strong>
+            </div>
+            <div className="compact-workout-actions">
+              <button
+                type="button"
+                className="header-reset compact-action"
+                onClick={resetWorkout}
+                aria-label="Reset workout"
+              >
+                <RotateCcw aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className={`compact-timer-toggle ${isRunning ? 'pause' : ''}`}
+                onClick={isRunning ? pauseTimer : startTimer}
+                aria-label={isRunning ? 'Pause' : time > 0 ? 'Resume' : 'Start'}
+              >
+                {isRunning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+              </button>
+            </div>
+          </div>
+        )}
+
         <section
           className="round-status"
           aria-label={
