@@ -96,7 +96,7 @@ function BrandCredit() {
       >
         <img
           className="brand-logo"
-          src="/b-squared-solutions-logo.svg"
+          src={`${import.meta.env.BASE_URL}b-squared-solutions-logo.svg`}
           alt="B Squared Solutions"
         />
       </a>
@@ -757,7 +757,7 @@ function WorkoutTracker({
 
       <main className="tracker-main">
         {showCompactHeader && (
-          <div className="compact-workout-bar" role="toolbar" aria-label="Workout controls">
+          <div className="compact-workout-bar" role="group" aria-label="Workout controls">
             <div className="compact-workout-meta">
               <span>Workout In Progress</span>
               <strong>{workout.athlete}</strong>

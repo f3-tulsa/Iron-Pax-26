@@ -129,7 +129,7 @@ describe('App', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Start' }))
 
     expect(screen.queryByLabelText('Select IronPAX workout')).not.toBeInTheDocument()
-    expect(screen.getByRole('toolbar', { name: 'Workout controls' })).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Workout controls' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
   })
 
@@ -143,7 +143,7 @@ describe('App', () => {
     expect(confirmSpy).toHaveBeenCalled()
     expect(screen.getByLabelText('Select IronPAX workout')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
-    expect(screen.queryByRole('toolbar', { name: 'Workout controls' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Workout controls' })).not.toBeInTheDocument()
   })
 
   it('persists the current exercise split during an active interval', () => {
