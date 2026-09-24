@@ -25,7 +25,7 @@ describe('App', () => {
     expect(screen.getByText('5')).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'B Squared Solutions' })).toHaveAttribute(
       'src',
-      'https://i.ibb.co/fdtmqgGs/B2-S-Logo-Red-White.png',
+      '/b-squared-solutions-logo.svg',
     )
   })
 
@@ -119,6 +119,72 @@ describe('App', () => {
     expect(saved.elapsedMilliseconds).toBe(2_000)
     expect(saved.exerciseTimes[0][0]).toBe(2_000)
     expect(saved.exerciseTimes[0][1]).toBe(0)
+  })
+
+  it('collapses the full header into compact workout controls after the workout starts', () => {
+    render(<App />)
+
+    expect(screen.getByLabelText('Select IronPAX workout')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+
+    expect(screen.queryByLabelText('Select IronPAX workout')).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Workout controls' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeInTheDocument()
+  })
+
+  it('restores the full header after resetting from compact workout controls', () => {
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Reset workout' }))
+
+    expect(confirmSpy).toHaveBeenCalled()
+    expect(screen.getByLabelText('Select IronPAX workout')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Workout controls' })).not.toBeInTheDocument()
+  })
+
+  it('shows compact workout controls immediately for saved in-progress workouts', () => {
+    localStorage.setItem(
+      'iron-pax-progress:dj-keller-2026-08-31',
+      JSON.stringify({
+        hasStartedWorkout: true,
+        currentRound: 1,
+        currentExerciseIndex: 0,
+        elapsedMilliseconds: 1_500,
+        isFinished: false,
+        exerciseTimes: [Array(5).fill(0)],
+        partialProgress: 0,
+      }),
+    )
+
+    render(<App />)
+
+    expect(screen.queryByLabelText('Select IronPAX workout')).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Workout controls' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Resume' })).toBeInTheDocument()
+  })
+
+  it('shows compact workout controls when saved progress advanced to a later move', () => {
+    localStorage.setItem(
+      'iron-pax-progress:dj-keller-2026-08-31',
+      JSON.stringify({
+        currentRound: 1,
+        currentExerciseIndex: 2,
+        elapsedMilliseconds: 0,
+        isFinished: false,
+        exerciseTimes: [Array(5).fill(0)],
+        partialProgress: 0,
+      }),
+    )
+
+    render(<App />)
+
+    expect(screen.queryByLabelText('Select IronPAX workout')).not.toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Workout controls' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Start' })).toBeInTheDocument()
   })
 
   it('persists the current exercise split during an active interval', () => {

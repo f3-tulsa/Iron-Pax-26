@@ -12,6 +12,7 @@ import {
 import { getWorkoutForDate, workouts, type Workout } from './data/workouts'
 
 interface SavedProgress {
+  hasStartedWorkout: boolean
   currentRound: number
   currentExerciseIndex: number
   elapsedMilliseconds: number
@@ -21,6 +22,7 @@ interface SavedProgress {
 }
 
 const initialProgress: SavedProgress = {
+  hasStartedWorkout: false,
   currentRound: 1,
   currentExerciseIndex: 0,
   elapsedMilliseconds: 0,
@@ -48,6 +50,16 @@ function readProgress(storageKey: string): SavedProgress {
     localStorage.removeItem(storageKey)
     return initialProgress
   }
+}
+
+function hasWorkoutStarted(progress: SavedProgress) {
+  return (
+    progress.hasStartedWorkout ||
+    progress.elapsedMilliseconds > 0 ||
+    progress.currentRound > 1 ||
+    progress.currentExerciseIndex > 0 ||
+    progress.isFinished
+  )
 }
 
 function normalizeExerciseTimes(workout: Workout, savedTimes: number[][]) {
@@ -94,6 +106,11 @@ function BrandCredit() {
         target="_blank"
         rel="noopener noreferrer"
       >
+        <img
+          className="brand-logo"
+          src={`${import.meta.env.BASE_URL}b-squared-solutions-logo.svg`}
+          alt="B Squared Solutions"
+        />
       </a>
     </div>
   )
@@ -204,6 +221,7 @@ function WorkoutTracker({
   const [time, setTime] = useState(savedProgress.elapsedMilliseconds)
   const [isRunning, setIsRunning] = useState(false)
   const [isFinished, setIsFinished] = useState(savedProgress.isFinished)
+  const [hasStartedWorkout, setHasStartedWorkout] = useState(() => hasWorkoutStarted(savedProgress))
   const [currentRound, setCurrentRound] = useState(savedProgress.currentRound)
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(
     savedProgress.currentExerciseIndex,
@@ -278,6 +296,7 @@ function WorkoutTracker({
       requestRef.current = requestAnimationFrame(updateTime)
     }
 
+    setHasStartedWorkout(true)
     setIsRunning(true)
     startTimeRef.current = Date.now()
     requestRef.current = requestAnimationFrame(updateTime)
@@ -334,6 +353,7 @@ function WorkoutTracker({
     localStorage.setItem(
       storageKey,
       JSON.stringify({
+        hasStartedWorkout,
         currentRound,
         currentExerciseIndex,
         elapsedMilliseconds: time,
@@ -346,6 +366,7 @@ function WorkoutTracker({
     currentExerciseIndex,
     currentRound,
     exerciseTimes,
+    hasStartedWorkout,
     isFinished,
     isRunning,
     partialProgress,
@@ -369,6 +390,7 @@ function WorkoutTracker({
     setTime(0)
     setIsRunning(false)
     setIsFinished(false)
+    setHasStartedWorkout(false)
     setCurrentRound(1)
     setCurrentExerciseIndex(0)
     setExerciseTimes(normalizeExerciseTimes(workout, []))
@@ -443,6 +465,7 @@ function WorkoutTracker({
     : getExerciseDisplayReps(workout, 0, currentRound + 1)
   const completedCycles = isRepeatingWorkout ? Math.max(currentRound - 1, 0) : totalRounds
   const bankedScore = isScoreWorkout ? getBankedScore(workout, currentRound, currentExerciseIndex) : 0
+  const showCompactHeader = hasStartedWorkout && !isFinished
 
   if (isFinished) {
     const completedExerciseTimes = isRepeatingWorkout
@@ -715,31 +738,60 @@ function WorkoutTracker({
 
   return (
     <div className="tracker-shell">
-      <header className="app-header">
-        <div className="app-title-group">
-          <h1><Activity aria-hidden="true" /> {workout.athlete}</h1>
-          <WorkoutSelector
-            options={workoutOptions}
-            selectedWorkoutId={selectedWorkoutId}
-            onSelectWorkout={onSelectWorkout}
-          />
-        </div>
-        <div className="header-actions">
-          <button type="button" className="header-reset" onClick={resetWorkout} aria-label="Reset workout">
-            <RotateCcw aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className={`timer-toggle ${isRunning ? 'pause' : ''}`}
-            onClick={isRunning ? pauseTimer : startTimer}
-          >
-            {isRunning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
-            {isRunning ? 'Pause' : time > 0 ? 'Resume' : 'Start'}
-          </button>
-        </div>
-      </header>
+      {!showCompactHeader && (
+        <header className="app-header">
+          <div className="app-title-group">
+            <h1><Activity aria-hidden="true" /> {workout.athlete}</h1>
+            <WorkoutSelector
+              options={workoutOptions}
+              selectedWorkoutId={selectedWorkoutId}
+              onSelectWorkout={onSelectWorkout}
+            />
+          </div>
+          <div className="header-actions">
+            <button type="button" className="header-reset" onClick={resetWorkout} aria-label="Reset workout">
+              <RotateCcw aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className={`timer-toggle ${isRunning ? 'pause' : ''}`}
+              onClick={isRunning ? pauseTimer : startTimer}
+            >
+              {isRunning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+              {isRunning ? 'Pause' : time > 0 ? 'Resume' : 'Start'}
+            </button>
+          </div>
+        </header>
+      )}
 
       <main className="tracker-main">
+        {showCompactHeader && (
+          <div className="compact-workout-bar" role="group" aria-label="Workout controls">
+            <div className="compact-workout-meta">
+              <span>Workout In Progress</span>
+              <h1>{workout.athlete}</h1>
+            </div>
+            <div className="compact-workout-actions">
+              <button
+                type="button"
+                className="header-reset compact-action"
+                onClick={resetWorkout}
+                aria-label="Reset workout"
+              >
+                <RotateCcw aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className={`compact-timer-toggle ${isRunning ? 'pause' : ''}`}
+                onClick={isRunning ? pauseTimer : startTimer}
+              >
+                {isRunning ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+                <span>{isRunning ? 'Pause' : time > 0 ? 'Resume' : 'Start'}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         <section
           className="round-status"
           aria-label={

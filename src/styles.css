@@ -185,6 +185,100 @@ button {
   padding: clamp(12px, 2.8vh, 24px) clamp(12px, 2.8vw, 20px) clamp(8px, 2vh, 16px);
 }
 
+.compact-workout-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: clamp(10px, 2.2vh, 16px);
+  border: 1px solid #262626;
+  border-radius: 18px;
+  background: rgba(23, 23, 23, 0.92);
+  backdrop-filter: blur(14px);
+}
+
+.compact-workout-meta,
+.compact-workout-actions {
+  display: flex;
+  align-items: center;
+}
+
+.compact-workout-meta {
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.compact-workout-meta span {
+  color: #737373;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.compact-workout-meta h1 {
+  margin: 0;
+  max-width: 100%;
+  color: #f5f5f5;
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.compact-workout-actions {
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.compact-action {
+  width: 36px;
+  height: 36px;
+}
+
+.compact-timer-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  color: #0a0a0a;
+  background: #10b981;
+  cursor: pointer;
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.compact-timer-toggle:active {
+  transform: scale(0.95);
+}
+
+.compact-timer-toggle.pause {
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.compact-timer-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.compact-timer-toggle span {
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 .round-status {
   display: flex;
   flex-wrap: wrap;
@@ -468,32 +562,34 @@ button {
 
 .finish-button {
   display: flex;
-  flex: 0 0 132px;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-width: 0;
-  height: clamp(64px, 11vh, 96px);
-  border: 1px solid rgba(250, 204, 21, 0.3);
-  border-radius: 24px;
-  color: #facc15;
-  background: rgba(250, 204, 21, 0.1);
+  min-width: 92px;
+  height: clamp(52px, 8vh, 64px);
+  padding: 0 14px;
+  border: 1px solid #404040;
+  border-radius: 18px;
+  color: #a3a3a3;
+  background: transparent;
 }
 
 .finish-button:hover {
-  background: rgba(250, 204, 21, 0.18);
+  color: #f5f5f5;
+  background: #171717;
 }
 
 .finish-button span {
-  font-size: 0.8rem;
-  font-weight: 900;
-  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .finish-button svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .next-button {
@@ -547,6 +643,10 @@ button {
   .tracker-main {
     padding-top: 10px;
     padding-bottom: 8px;
+  }
+
+  .compact-workout-bar {
+    padding: 8px 10px;
   }
 
   .round-status {
@@ -982,9 +1082,9 @@ button {
   .finish-button {
     grid-area: finish;
     flex-basis: auto;
-    min-height: 72px;
+    min-height: 56px;
     height: auto;
-    padding: 14px 16px;
+    padding: 12px 14px;
   }
 
   .next-button {
