@@ -100,18 +100,6 @@ function BrandCredit() {
           B Squared Solutions
         </a>
       </p>
-      <a
-        className="brand-logo-link"
-        href="https://bsquaredsolutions.net/"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        <img
-          className="brand-logo"
-          src={`${import.meta.env.BASE_URL}b-squared-solutions-logo.svg`}
-          alt="B Squared Solutions"
-        />
-      </a>
     </div>
   )
 }

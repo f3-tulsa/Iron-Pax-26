@@ -528,16 +528,6 @@ button {
   color: #a3a3a3;
 }
 
-.brand-logo-link {
-  display: inline-flex;
-}
-
-.brand-logo {
-  display: block;
-  width: clamp(72px, 12vw, 104px);
-  height: auto;
-}
-
 .previous-button {
   display: grid;
   flex: 0 0 80px;
