@@ -23,10 +23,8 @@ describe('App', () => {
     expect(screen.getByRole('heading', { name: /DJ KELLER/i })).toBeInTheDocument()
     expect(screen.getByText('Manmakers')).toBeInTheDocument()
     expect(screen.getByText('5')).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'B Squared Solutions' })).toHaveAttribute(
-      'src',
-      '/b-squared-solutions-logo.svg',
-    )
+    expect(screen.queryByRole('img', { name: 'B Squared Solutions' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'B Squared Solutions' })).toBeInTheDocument()
   })
 
   it('shows the IronPAX week 1 workout on its scheduled week', () => {
@@ -76,6 +74,58 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { name: 'Goblet Squats' })).toBeInTheDocument()
     expect(screen.getByText('5 Manmakers + 15')).toBeInTheDocument()
+  })
+
+  it('shows the IronPAX week 4 workout on its scheduled week and banks reps', () => {
+    vi.setSystemTime(new Date('2026-09-29T12:00:00'))
+    render(<App />)
+
+    expect(screen.getByRole('heading', { name: /CRAYOLA’S MASTERPIECE/i })).toBeInTheDocument()
+    expect(screen.getByDisplayValue('IronPAX Week 4 • CRAYOLA’S MASTERPIECE')).toBeInTheDocument()
+    expect(screen.getByText('Banked Reps').parentElement).toHaveTextContent('0')
+    expect(screen.getByRole('heading', { name: 'Thrusters' })).toBeInTheDocument()
+    expect(screen.getByText('10 reps')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: /Next Move/i }))
+
+    expect(screen.getByRole('heading', { name: 'Pullovers to Knees to Block' })).toBeInTheDocument()
+    expect(screen.getByText('Murder Bunny to the 40-yd line')).toBeInTheDocument()
+    expect(screen.getByText('Banked Reps').parentElement).toHaveTextContent('10')
+  })
+
+  it('banks 150 reps for each full week 4 round', () => {
+    vi.setSystemTime(new Date('2026-09-29T12:00:00'))
+    render(<App />)
+
+    for (let station = 0; station < 15; station += 1) {
+      fireEvent.click(
+        screen.getByRole('button', {
+          name: station === 14 ? /Complete Round/i : /Next Move/i,
+        }),
+      )
+    }
+
+    expect(screen.getByText('Banked Reps').parentElement).toHaveTextContent('150')
+    expect(screen.getByText('Current Round').parentElement).toHaveTextContent('2')
+  })
+
+  it('adds partial reps when finishing week 4 mid-station', () => {
+    vi.setSystemTime(new Date('2026-09-29T12:00:00'))
+    render(<App />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Next Move/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Next Move/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Finish Now/i }))
+
+    expect(screen.getByText('Total Reps').parentElement).toHaveTextContent('20')
+
+    fireEvent.change(screen.getByLabelText('Completed reps on Pullovers to Knees to Block'), {
+      target: { value: '6' },
+    })
+
+    expect(screen.getByText('Total Reps').parentElement).toHaveTextContent('26')
+    expect(screen.getByRole('heading', { name: 'Reps by round' })).toBeInTheDocument()
+    expect(screen.getByText('26 reps')).toBeInTheDocument()
   })
 
   it('lets you switch to a different IronPAX workout from the selector', () => {

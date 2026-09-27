@@ -78,3 +78,8 @@ Append a new record to `src/data/workouts.ts` with a unique ID and its Monday
 includes the current date, and lets athletes switch to any loaded IronPAX week.
 Older records stay in the dataset and keep their own progress under a
 workout-specific local-storage key.
+
+For an AMRAP scored by points or total reps, give each exercise a
+`scoreTarget` and `scoreUnit`. The tracker then banks score as each move is
+completed and asks for partial progress when the clock stops mid-move. When
+every scored move uses `reps`, the app labels the result as total reps.
