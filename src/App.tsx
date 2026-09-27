@@ -210,7 +210,13 @@ function WorkoutTracker({
   const storageKey = `iron-pax-progress:${workout.id}`
   const isAmrap = workout.format === 'amrap'
   const isRepeatingWorkout = workout.format === 'amrap' || workout.format === 'progressive-amrap'
-  const isScoreWorkout = workout.format === 'progressive-amrap'
+  const isScoreWorkout =
+    isRepeatingWorkout && workout.exercises.some((exercise) => exercise.scoreTarget !== undefined)
+  const isRepScored =
+    isScoreWorkout &&
+    workout.exercises.every((exercise) => exercise.scoreTarget === undefined || exercise.scoreUnit === 'reps')
+  const scoreLabel = isRepScored ? 'Total Reps' : 'Score'
+  const scoreUnitLabel = isRepScored ? 'reps' : 'points'
   const cycleLabel = getCycleLabel(workout)
   const cyclePrefix = cycleLabel[0]
   const totalRounds = workout.rounds ?? 0
@@ -496,14 +502,14 @@ function WorkoutTracker({
       ? [
           ...Array.from({ length: completedCycles }, (_, index) => ({
             label: `Round ${index + 1}`,
-            detail: `${getRoundScore(workout, index + 1)} points`,
+            detail: `${getRoundScore(workout, index + 1)} ${scoreUnitLabel}`,
             score: getRoundScore(workout, index + 1),
           })),
           ...(hasIncompleteRound
             ? [
                 {
                   label: `Round ${currentRound}`,
-                  detail: `${currentRoundScore} points`,
+                  detail: `${currentRoundScore} ${scoreUnitLabel}`,
                   score: currentRoundScore,
                 },
               ]
@@ -543,7 +549,7 @@ function WorkoutTracker({
           {isScoreWorkout ? (
             <>
               <article>
-                <span>Score</span>
+                <span>{scoreLabel}</span>
                 <strong>{totalScore}</strong>
               </article>
               <article>
@@ -645,7 +651,7 @@ function WorkoutTracker({
               <div className="results-section-heading">
                 <div>
                   <span>Score Breakdown</span>
-                  <h2 id="score-breakdown-title">Points by round</h2>
+                  <h2 id="score-breakdown-title">{isRepScored ? 'Reps by round' : 'Points by round'}</h2>
                 </div>
               </div>
               {scoreBreakdown.map((round) => (
@@ -807,7 +813,7 @@ function WorkoutTracker({
           </div>
           {isScoreWorkout ? (
             <div>
-              <span>Banked Score</span>
+              <span>{isRepScored ? 'Banked Reps' : 'Banked Score'}</span>
               <strong>{bankedScore}</strong>
             </div>
           ) : isAmrap ? (
